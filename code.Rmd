@@ -1,0 +1,11 @@
+---
+title: "Untitled"
+author: "Brennan Baker"
+date: "February 19, 2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+data <- read_csv("./data/")
+```
+
