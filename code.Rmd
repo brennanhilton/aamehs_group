@@ -7,6 +7,13 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(haven)
-zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat")
+zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat") %>% dplyr::select(zip,ends_with("tot")) 
+lead_copper <- read_csv("./data/lead_copper_2014.csv") %>% janitor::clean_names() %>% 
+  rename(zip = zipcode) 
+```
+
+```{r}
+zip_birth_data %>% 
+  summarise(birthtot=sum(birthtot))
 ```
 
