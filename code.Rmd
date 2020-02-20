@@ -6,6 +6,7 @@ output: html_document
 ---
 ```{r}
 library(tidyverse)
-data <- read_csv("./data/")
+library(haven)
+zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat")
 ```
 
