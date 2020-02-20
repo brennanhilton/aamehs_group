@@ -8,12 +8,36 @@ output: html_document
 library(tidyverse)
 library(haven)
 zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat") %>% dplyr::select(zip,ends_with("tot")) 
-lead_copper <- read_csv("./data/lead_copper_2014.csv") %>% janitor::clean_names() %>% 
-  rename(zip = zipcode) 
+lead_copper <- read_csv("./data/lead_copper_2014.csv") %>% janitor::clean_names() %>% rename(zip = zipcode) 
 ```
 
 ```{r}
-zip_birth_data %>% 
-  summarise(birthtot=sum(birthtot))
+#lwb defined as below 2500g
+#preterm 36 weeks or fewer gestation
+#low apgar 8 and below
+birth_outcomes_summary <- zip_birth_data %>% 
+  mutate_all(~replace(., is.na(.), 0)) %>% 
+  mutate(lbw = bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot,
+         vlbw = bwt1tot+bwt2tot+bwt3tot,
+         elbw = bwt1tot+bwt2tot,
+         percent_lbw = lbw/(bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot+bwt6tot+bwt7tot+bwt8tot+bwt9tot),
+         preterm = ga1tot+ga2tot+ga3tot+ga4tot,
+         very_preterm = ga1tot+ga2tot,
+         extreme_preterm = ga1tot,
+         term = ga5tot,
+         percent_preterm = (ga1tot+ga2tot+ga3tot+ga4tot)/(ga1tot+ga2tot+ga3tot+ga4tot+ga5tot),
+         percent_low_apgar = (apg1tot+apg2tot+apg3tot)/(apg1tot+apg2tot+apg3tot+apg4tot+apg5tot),
+         percent_singleton = plur1tot/(plur1tot+plur2tot),
+         percent_c_section = (mth3tot+mth4tot)/(mth1tot+mth2tot+mth3tot+mth4tot)) %>% dplyr::select(zip,lbw,vlbw,elbw,percent_lbw,preterm,very_preterm,extreme_preterm,term,percent_low_apgar,percent_singleton,percent_c_section,percent_preterm,birthtot)
+
+birth_outcomes = birth_outcomes_summary %>% 
+  summarise(births=sum(birthtot),
+            preterm = mean(percent_preterm),
+            low_birthweight = mean(percent_lbw),
+            low_apgar = mean(percent_low_apgar),
+            singleton = mean(percent_singleton),
+            c_section = mean(percent_c_section))
+
+#write_csv(birth_outcomes, "./results/birth_outcomes_summary.csv")
 ```
 
