@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+author: "Brennan Baker"
+date: "February 25, 2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(haven)
+
+# neighborhood birth data 2014
+b2014 <- read_sas("./data/cdall_14.sas7bdat")
+b2013 <- read_sas("./data/cdall_13.sas7bdat")
+b2012 <- read_sas("./data/cdall_12.sas7bdat")
+b2011 <- read_sas("./data/cdall_11.sas7bdat")
+b2010 <- read_sas("./data/cdall_10.sas7bdat")
+b2009 <- read_sas("./data/cdall_9.sas7bdat")
+b2008 <- read_sas("./data/cdall_8.sas7bdat")
+b2007 <- read_sas("./data/cdall_7.sas7bdat")
+b2006 <- read_sas("./data/cdall_6.sas7bdat")
+b2005 <- read_sas("./data/cdall_5.sas7bdat")
+```
