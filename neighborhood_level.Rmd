@@ -57,7 +57,7 @@ birth_outcomes = birth_outcomes_summary %>%
 
 lead data
 ```{r}
-#lead_data. above_5 above_10, etc are number above that number (µg/dL) per 1000 tested
+#lead_data. above_5 above_10, etc are number above that number (?g/dL) per 1000 tested
 lead <- read_csv("./data/lead_children_under_6.csv") %>% janitor::clean_names() %>% 
   rename(neighborhood = geo_area_name) %>% 
   arrange(neighborhood) %>%
@@ -99,5 +99,16 @@ data = data %>% left_join(lead)
 # in blood lead data I see some neighborhoods are missing spaces after or before the dash. also rockaway vs 
 #rockaways
 data %>% filter(is.na(above_5)) %>% view()
+```
+
+crude models for this year group
+```{r}
+#have an ses effect
+model <- lm(percent_preterm ~ percent_white, data=data)
+broom::tidy(model)
+
+#no lead effect
+model <- lm(percent_preterm ~ above_5, data=data)
+broom::tidy(model)
 ```
 
