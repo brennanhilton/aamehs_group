@@ -9,12 +9,17 @@ library(tidyverse)
 library(haven)
 zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat") %>% dplyr::select(zip,ends_with("tot")) 
 lead_copper <- read_csv("./data/lead_copper_2014.csv") %>% janitor::clean_names() %>% rename(zip = zipcode) 
+
+# neighborhood birth data 2014
+birth_2014 <- read_sas("./data/cdall_14.sas7bdat")
 ```
 
 ```{r}
 #lwb defined as below 2500g
 #preterm 36 weeks or fewer gestation
 #low apgar 8 and below
+zip_birth_data = zip_birth_data %>% replace(is.na(.), 0)
+
 birth_outcomes_summary <- zip_birth_data %>% 
   mutate_all(~replace(., is.na(.), 0)) %>% 
   mutate(lbw = bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot,
@@ -28,7 +33,11 @@ birth_outcomes_summary <- zip_birth_data %>%
          percent_preterm = (ga1tot+ga2tot+ga3tot+ga4tot)/(ga1tot+ga2tot+ga3tot+ga4tot+ga5tot),
          percent_low_apgar = (apg1tot+apg2tot+apg3tot)/(apg1tot+apg2tot+apg3tot+apg4tot+apg5tot),
          percent_singleton = plur1tot/(plur1tot+plur2tot),
-         percent_c_section = (mth3tot+mth4tot)/(mth1tot+mth2tot+mth3tot+mth4tot)) %>% dplyr::select(zip,lbw,vlbw,elbw,percent_lbw,preterm,very_preterm,extreme_preterm,term,percent_low_apgar,percent_singleton,percent_c_section,percent_preterm,birthtot)
+         percent_c_section = (mth3tot+mth4tot)/(mth1tot+mth2tot+mth3tot+mth4tot),
+         percent_low_edu = edlev1tot/(edlev1tot+edlev2tot+edlev3tot+edlev4tot+edlev5tot),
+         percent_us_born = nat1tot/(nat1tot+nat2tot),
+         maternal_over_35_percent = (age7tot+age8tot+age9tot)/(age1tot+age2tot+age3tot+age4tot+age5tot+age6tot+age7tot+age8tot+age9tot),
+         percent_white = eth_wh_tot/birthtot) %>% dplyr::select(zip,lbw,vlbw,elbw,percent_lbw,preterm,very_preterm,extreme_preterm,term,percent_low_apgar,percent_singleton,percent_c_section,percent_preterm,birthtot,percent_white, percent_us_born, percent_low_edu,maternal_over_35_percent)
 
 birth_outcomes = birth_outcomes_summary %>% 
   summarise(births=sum(birthtot),
@@ -39,5 +48,31 @@ birth_outcomes = birth_outcomes_summary %>%
             c_section = mean(percent_c_section))
 
 #write_csv(birth_outcomes, "./results/birth_outcomes_summary.csv")
+```
+
+tidy the lead data
+```{r}
+lead_copper2 = lead_copper %>% 
+  filter(str_detect(date_received,"2014")) %>% 
+  mutate(lead_5_minute_flush_mg_l= replace_na(lead_5_minute_flush_mg_l,0),
+         lead_first_draw_mg_l = replace_na(lead_first_draw_mg_l,0),
+         lead_1_2_minute_flush_mg_l = replace_na(lead_1_2_minute_flush_mg_l,0)) %>% 
+  mutate(lead = lead_first_draw_mg_l+lead_1_2_minute_flush_mg_l+lead_5_minute_flush_mg_l) %>% 
+  group_by(zip) %>% 
+  summarise(lead = sum(lead), 
+            copper = mean(copper_first_draw_mg_l)) %>% 
+  mutate(lead_detect = ifelse(lead == 0, "no", "yes")) %>% 
+  mutate(lead_detect = as.factor(lead_detect))
+
+data = lead_copper2 %>% left_join(birth_outcomes_summary)
+```
+
+crude SES models
+```{r}
+model <- lm(percent_lbw ~ percent_white,data=data)
+broom::tidy(model)
+
+model <- lm(percent_preterm ~ percent_white,data=data)
+broom::tidy(model)
 ```
 
