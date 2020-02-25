@@ -8,15 +8,96 @@ output: html_document
 library(tidyverse)
 library(haven)
 
-# neighborhood birth data 2014
-b2014 <- read_sas("./data/neighborhood_birth/cdall_14.sas7bdat")
-b2013 <- read_sas("./data/neighborhood_birth/cdall_13.sas7bdat")
-b2012 <- read_sas("./data/neighborhood_birth/cdall_12.sas7bdat")
-b2011 <- read_sas("./data/neighborhood_birth/cdall_11.sas7bdat")
-b2010 <- read_sas("./data/neighborhood_birth/cdall_10.sas7bdat")
-b2009 <- read_sas("./data/neighborhood_birth/cdall_9.sas7bdat")
-b2008 <- read_sas("./data/neighborhood_birth/cdall_8.sas7bdat")
-b2007 <- read_sas("./data/neighborhood_birth/cdall_7.sas7bdat")
-b2006 <- read_sas("./data/neighborhood_birth/cdall_6.sas7bdat")
-b2005 <- read_sas("./data/neighborhood_birth/cdall_5.sas7bdat")
+# legend to convert zip code into neighborhood
+legend <- read_csv("./data/uhf_legend.csv") %>%
+  separate(zip_codes, c("a","b","c","d","e","f","h","i","j")) %>% 
+  gather("remove","zip_code", -neighborhood) %>% 
+  filter(!is.na(zip_code)) %>% 
+  dplyr::select(-remove) %>% 
+  arrange(neighborhood)
+
+#birth outcomes by zipcode
+#lwb defined as below 2500g
+#preterm 36 weeks or fewer gestation
+#low apgar 8 and below
+zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat") %>% dplyr::select(zip,ends_with("tot")) 
+zip_birth_data = zip_birth_data %>% replace(is.na(.), 0)
+
+birth_outcomes_summary <- zip_birth_data %>% 
+  mutate_all(~replace(., is.na(.), 0)) %>% 
+  mutate(lbw = bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot,
+         vlbw = bwt1tot+bwt2tot+bwt3tot,
+         elbw = bwt1tot+bwt2tot,
+         percent_lbw = lbw/(bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot+bwt6tot+bwt7tot+bwt8tot+bwt9tot),
+         preterm = ga1tot+ga2tot+ga3tot+ga4tot,
+         very_preterm = ga1tot+ga2tot,
+         extreme_preterm = ga1tot,
+         term = ga5tot,
+         percent_preterm = (ga1tot+ga2tot+ga3tot+ga4tot)/(ga1tot+ga2tot+ga3tot+ga4tot+ga5tot),
+         percent_low_apgar = (apg1tot+apg2tot+apg3tot)/(apg1tot+apg2tot+apg3tot+apg4tot+apg5tot),
+         percent_singleton = plur1tot/(plur1tot+plur2tot),
+         percent_c_section = (mth3tot+mth4tot)/(mth1tot+mth2tot+mth3tot+mth4tot),
+         percent_low_edu = edlev1tot/(edlev1tot+edlev2tot+edlev3tot+edlev4tot+edlev5tot),
+         percent_us_born = nat1tot/(nat1tot+nat2tot),
+         maternal_over_35_percent = (age7tot+age8tot+age9tot)/(age1tot+age2tot+age3tot+age4tot+age5tot+age6tot+age7tot+age8tot+age9tot),
+         percent_white = eth_wh_tot/birthtot) %>% dplyr::select(zip,lbw,vlbw,elbw,percent_lbw,preterm,very_preterm,extreme_preterm,term,percent_low_apgar,percent_singleton,percent_c_section,percent_preterm,birthtot,percent_white, percent_us_born, percent_low_edu,maternal_over_35_percent) %>% 
+  rename(zip_code = zip) %>% mutate(zip_code = as.character(zip_code))
+
+#just an overall summary
+birth_outcomes = birth_outcomes_summary %>% 
+  summarise(births=sum(birthtot),
+            preterm = mean(percent_preterm),
+            low_birthweight = mean(percent_lbw),
+            low_apgar = mean(percent_low_apgar),
+            singleton = mean(percent_singleton),
+            c_section = mean(percent_c_section))
+
+#write_csv(birth_outcomes, "./results/birth_outcomes_summary.csv")
 ```
+
+lead data
+```{r}
+#lead_data. above_5 above_10, etc are number above that number (µg/dL) per 1000 tested
+lead <- read_csv("./data/lead_children_under_6.csv") %>% janitor::clean_names() %>% 
+  rename(neighborhood = geo_area_name) %>% 
+  arrange(neighborhood) %>%
+  rename(year = time_period) %>% 
+  filter(year %in% c("2010", "2011", "2012", "2013")) %>% 
+  group_by(neighborhood) %>% 
+  summarise_at(c("above_5", "above_10", "above_15"), mean, na.rm = T) %>% 
+   mutate(neighborhood = str_replace_all(neighborhood, "[^[:alnum:]]", ""))
+```
+
+
+```{r}
+#join the legend 
+#na zipcodes: 10065(upper east side), 10069(upper west side), 10075(upper east side), 10282(lower manhattan), 11109(long island city). what neighborhood do these zips belong to? fixed them below
+data = birth_outcomes_summary %>% left_join(legend) %>% arrange(neighborhood) %>% 
+  mutate(neighborhood = ifelse(zip_code %in% c("10065", "10075"), "UpperEastSide", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(zip_code %in% c("10069"), "UpperWestSide", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(zip_code %in% c("10282"), "LowerManhattan", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(zip_code %in% c("11109"), "LongIslandCityAstoria", neighborhood))
+
+#group by neighborhood and summarize. This adds up the zipcodes that belong to each neighborhood
+
+data = data %>%
+  mutate(neighborhood = str_replace_all(neighborhood, "[^[:alnum:]]", "")) %>%
+  group_by(neighborhood) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  mutate(year = "2010_2013") %>% 
+  mutate(neighborhood = ifelse(neighborhood == "Rockaway", "Rockaways", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(neighborhood == "FordhamBronxPark", "FordhamBronxPk", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(neighborhood == "GreenwichVillageSoho", "GreenwichVillageSoHo", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(neighborhood == "PelhemThrogsNeck", "PelhamThrogsNeck", neighborhood)) %>% 
+  mutate(neighborhood = ifelse(neighborhood == "WashingtonHeightsInwood", "WashingtonHeights", neighborhood))
+
+
+#join lead data
+
+data = data %>% left_join(lead)
+#we have nas so the naming must be wrong. 
+# in blood lead data I see some neighborhoods are missing spaces after or before the dash. also rockaway vs 
+#rockaways
+data %>% filter(is.na(above_5)) %>% view()
+```
+
