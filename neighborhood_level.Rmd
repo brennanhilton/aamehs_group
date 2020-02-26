@@ -23,7 +23,7 @@ legend <- read_csv("./data/uhf_legend.csv") %>%
 zip_birth_data <- read_sas("./data/zipall_1113.sas7bdat") %>% dplyr::select(zip,ends_with("tot")) 
 zip_birth_data = zip_birth_data %>% replace(is.na(.), 0)
 
-birth_outcomes_summary <- zip_birth_data %>% 
+birth_SES <- zip_birth_data %>% 
   mutate_all(~replace(., is.na(.), 0)) %>% 
   mutate(lbw = bwt1tot+bwt2tot+bwt3tot+bwt4tot+bwt5tot,
          vlbw = bwt1tot+bwt2tot+bwt3tot,
@@ -62,7 +62,7 @@ lead <- read_csv("./data/lead_children_under_6.csv") %>% janitor::clean_names() 
   rename(neighborhood = geo_area_name) %>% 
   arrange(neighborhood) %>%
   rename(year = time_period) %>% 
-  filter(year %in% c("2010", "2011", "2012", "2013")) %>% 
+  filter(year %in% c("2011", "2012")) %>% 
   group_by(neighborhood) %>% 
   summarise_at(c("above_5", "above_10", "above_15"), mean, na.rm = T) %>% 
    mutate(neighborhood = str_replace_all(neighborhood, "[^[:alnum:]]", ""))
