@@ -1,0 +1,25 @@
+---
+title: "Untitled"
+author: "Brennan Baker"
+date: "February 26, 2020"
+output: html_document
+---
+demographics
+```{r}
+library(tidyverse)
+
+demo <- read_csv("./school_data/demographics.csv")
+
+```
+
+lead data
+```{r}
+lead <- read_csv("./school_data/2017_water_lead.csv")
+```
+
+scores
+```{r}
+ela_scores <- read_csv("./school_data/ela_scores.csv")
+math_scores <- read_csv("./school_data/math_scores.csv")
+```
+
