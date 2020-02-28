@@ -1,25 +1,71 @@
 ---
-title: "Untitled"
+title: ""
 author: "Brennan Baker"
 date: "February 26, 2020"
 output: html_document
 ---
-demographics
-```{r}
+
+```{r setup, message=FALSE}
 library(tidyverse)
 
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+# A note on merging
+# My understanding is that the DBN associated with each school is made up of 3 elements
+# - the geographical district number (2 digits)
+# - the borough code (a capital letter, ie K is for Brooklyn)
+# - the school/building number (3 digits)
+
+```
+
+demographics
+```{r}
 demo <- read_csv("./school_data/demographics.csv")
+
+head(demo)
+names(demo)
 
 ```
 
 lead data
 ```{r}
-lead <- read_csv("./school_data/2017_water_lead.csv")
+lead <- read_csv("./school_data/2017_water_lead.csv") 
+
+head(lead)
+names(lead)
 ```
 
 scores
 ```{r}
-ela_scores <- read_csv("./school_data/ela_scores.csv")
-math_scores <- read_csv("./school_data/math_scores.csv")
+ela_scores <- read_csv("./school_data/ela_scores.csv") 
+
+head(ela_scores)
+names(ela_scores)
+
+math_scores <- read_csv("./school_data/math_scores.csv") 
+
+head(math_scores)
+names(math_scores)
+```
+
+merged_files 
+```{r}
+
 ```
 
