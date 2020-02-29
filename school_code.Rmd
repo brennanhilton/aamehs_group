@@ -26,46 +26,123 @@ scale_fill_discrete = scale_fill_viridis_d
 
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 
-# A note on merging
+# Misbath: A note on merging
 # My understanding is that the DBN associated with each school is made up of 3 elements
 # - the geographical district number (2 digits)
 # - the borough code (a capital letter, ie K is for Brooklyn)
 # - the school/building number (3 digits)
 
+
 ```
 
 demographics
 ```{r}
-demo <- read_csv("./school_data/demographics.csv")
+demo <- read_csv("./school_data/demographics.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year == "2016-17") %>% 
+  mutate(school_year = year) %>% 
+  select(-year) %>%
+  arrange(dbn)
 
-head(demo)
+
 names(demo)
+head(demo)
+#skimr::skim(demo)
+view(demo)
 
 ```
 
 lead data
 ```{r}
-lead <- read_csv("./school_data/2017_water_lead.csv") 
+lead <- read_csv("./school_data/2017_water_lead.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(number_of_elevated_samples = as.numeric(number_of_elevated_samples)) %>% 
+  mutate(number_of_samples_tested = as.numeric(number_of_samples_tested)) %>%
+  mutate(percent_elevated = 
+           round((number_of_elevated_samples / number_of_samples_tested)*100, 2)) %>% 
+  mutate(geographical_district = as.character(geographical_district)) %>% 
+  mutate(geographical_district = 
+           str_pad(geographical_district, width=2, side="left", pad="0")) %>% 
+  mutate(dbn = str_c(geographical_district, building_code)) %>% 
+  drop_na(elevated_result) %>%
+  arrange(dbn)
+  
 
-head(lead)
 names(lead)
+skimr::skim(lead)
+view(lead)
+
 ```
 
 scores
 ```{r}
-ela_scores <- read_csv("./school_data/ela_scores.csv") 
+ela_scores <- read_csv("./school_data/ela_scores.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year %in% c("2016", "2017")) %>% 
+  arrange(dbn, year)
 
 head(ela_scores)
 names(ela_scores)
+#view(ela_scores)
 
-math_scores <- read_csv("./school_data/math_scores.csv") 
+math_scores <- read_csv("./school_data/math_scores.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year %in% c("2016", "2017")) %>%
+  arrange(dbn, year)
 
 head(math_scores)
 names(math_scores)
+#view(math_scores)
 ```
 
 merged_files 
 ```{r}
+demo_lead <- left_join(lead, demo, by = "dbn") %>%
+  drop_na()
 
+
+#once we match the demographics dataset to the lead results, the sample size decreases from 1544 (N of lead results) to 828 
+
+  
+```
+
+Descriptive stats & visualization 
+```{r}
+
+a = demo_lead %>% 
+  mutate(
+    borough = recode(borough, "M" = "Manhattan", "K" = "Brooklyn", 
+                        "Q" = "Queens", "X" = "Bronx",
+                        "R" = "Staten Island")) %>% 
+  group_by(borough) %>% 
+  summarise(mean_percent_elevated = mean(percent_elevated)) 
+
+a = a %>% 
+  ggplot(aes(x = borough, y = mean_percent_elevated)) + 
+  geom_col() 
+
+b = demo_lead %>% 
+  select(elevated_result, percent_female, percent_asian, percent_black, percent_hispanic, 
+         percent_white, percent_students_with_disabilities, percent_english_language_learners,
+         percent_poverty) %>% 
+  pivot_longer(
+    cols = starts_with("percent_"),
+    names_to = "racial_breakdown",
+    names_prefix = "percent_",
+    values_to = "percent"
+  ) %>%
+  group_by(elevated_result, percent) %>% 
+  summarise(n=n())
+
+  
+c = demo_lead %>% 
+ select(percent_elevated, percent_female) %>%
+ ggplot(aes(x=percent_female, y=percent_elevated)) + 
+ geom_point() 
+   
+d = demo_lead %>% 
+ select(percent_elevated, percent_black) %>%
+ ggplot(aes(x=percent_black, y=percent_elevated)) + 
+ geom_point() 
 ```
 

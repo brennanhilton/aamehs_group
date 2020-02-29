@@ -202,13 +202,18 @@ scale_fill_discrete = scale_fill_viridis_d
 
 theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
 
-# A note on merging
+# Misbath: A note on merging
 # My understanding is that the DBN associated with each school is made up of 3 elements
 # - the geographical district number (2 digits)
 # - the borough code (a capital letter, ie K is for Brooklyn)
 # - the school/building number (3 digits)</code></pre>
 <p>demographics</p>
-<pre class="r"><code>demo &lt;- read_csv(&quot;./school_data/demographics.csv&quot;)</code></pre>
+<pre class="r"><code>demo &lt;- read_csv(&quot;./school_data/demographics.csv&quot;) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  filter(year == &quot;2016-17&quot;) %&gt;% 
+  mutate(school_year = year) %&gt;% 
+  select(-year) %&gt;%
+  arrange(dbn)</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
 ##   .default = col_double(),
@@ -228,70 +233,86 @@ theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
 ##   `Economic Need Index` = col_character()
 ## )</code></pre>
 <pre><code>## See spec(...) for full column specifications.</code></pre>
+<pre class="r"><code>names(demo)</code></pre>
+<pre><code>##  [1] &quot;dbn&quot;                                             
+##  [2] &quot;school_name&quot;                                     
+##  [3] &quot;total_enrollment&quot;                                
+##  [4] &quot;grade_pk_half_day_full_day&quot;                      
+##  [5] &quot;grade_k&quot;                                         
+##  [6] &quot;grade_1&quot;                                         
+##  [7] &quot;grade_2&quot;                                         
+##  [8] &quot;grade_3&quot;                                         
+##  [9] &quot;grade_4&quot;                                         
+## [10] &quot;grade_5&quot;                                         
+## [11] &quot;grade_6&quot;                                         
+## [12] &quot;grade_7&quot;                                         
+## [13] &quot;grade_8&quot;                                         
+## [14] &quot;grade_9&quot;                                         
+## [15] &quot;grade_10&quot;                                        
+## [16] &quot;grade_11&quot;                                        
+## [17] &quot;grade_12&quot;                                        
+## [18] &quot;number_female&quot;                                   
+## [19] &quot;percent_female&quot;                                  
+## [20] &quot;number_male&quot;                                     
+## [21] &quot;percent_male&quot;                                    
+## [22] &quot;number_asian&quot;                                    
+## [23] &quot;percent_asian&quot;                                   
+## [24] &quot;number_black&quot;                                    
+## [25] &quot;percent_black&quot;                                   
+## [26] &quot;number_hispanic&quot;                                 
+## [27] &quot;percent_hispanic&quot;                                
+## [28] &quot;number_multiple_race_categories_not_represented&quot; 
+## [29] &quot;percent_multiple_race_categories_not_represented&quot;
+## [30] &quot;number_white&quot;                                    
+## [31] &quot;percent_white&quot;                                   
+## [32] &quot;number_students_with_disabilities&quot;               
+## [33] &quot;percent_students_with_disabilities&quot;              
+## [34] &quot;number_english_language_learners&quot;                
+## [35] &quot;percent_english_language_learners&quot;               
+## [36] &quot;number_poverty&quot;                                  
+## [37] &quot;percent_poverty&quot;                                 
+## [38] &quot;economic_need_index&quot;                             
+## [39] &quot;school_year&quot;</code></pre>
 <pre class="r"><code>head(demo)</code></pre>
 <pre><code>## # A tibble: 6 x 39
-##   DBN   `School Name` Year  `Total Enrollme… `Grade PK (Half… `Grade K`
-##   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;            &lt;dbl&gt;            &lt;dbl&gt;     &lt;dbl&gt;
-## 1 01M0… P.S. 015 Rob… 2014…              183               18        27
-## 2 01M0… P.S. 015 Rob… 2015…              176               14        32
-## 3 01M0… P.S. 015 Rob… 2016…              178               17        28
-## 4 01M0… P.S. 015 Rob… 2017…              190               17        28
-## 5 01M0… P.S. 015 Rob… 2018…              174               13        20
-## 6 01M0… P.S. 019 Ash… 2014…              270               30        44
-## # … with 33 more variables: `Grade 1` &lt;dbl&gt;, `Grade 2` &lt;dbl&gt;, `Grade
-## #   3` &lt;dbl&gt;, `Grade 4` &lt;dbl&gt;, `Grade 5` &lt;dbl&gt;, `Grade 6` &lt;dbl&gt;, `Grade
-## #   7` &lt;dbl&gt;, `Grade 8` &lt;dbl&gt;, `Grade 9` &lt;dbl&gt;, `Grade 10` &lt;dbl&gt;, `Grade
-## #   11` &lt;dbl&gt;, `Grade 12` &lt;dbl&gt;, `# Female` &lt;dbl&gt;, `% Female` &lt;chr&gt;, `#
-## #   Male` &lt;dbl&gt;, `% Male` &lt;chr&gt;, `# Asian` &lt;dbl&gt;, `% Asian` &lt;chr&gt;, `#
-## #   Black` &lt;dbl&gt;, `% Black` &lt;chr&gt;, `# Hispanic` &lt;dbl&gt;, `% Hispanic` &lt;chr&gt;,
-## #   `# Multiple Race Categories Not Represented` &lt;dbl&gt;, `% Multiple Race
-## #   Categories Not Represented` &lt;chr&gt;, `# White` &lt;dbl&gt;, `% White` &lt;chr&gt;,
-## #   `# Students with Disabilities` &lt;dbl&gt;, `% Students with
-## #   Disabilities` &lt;chr&gt;, `# English Language Learners` &lt;dbl&gt;, `% English
-## #   Language Learners` &lt;chr&gt;, `# Poverty` &lt;dbl&gt;, `% Poverty` &lt;chr&gt;,
-## #   `Economic Need Index` &lt;chr&gt;</code></pre>
-<pre class="r"><code>names(demo)</code></pre>
-<pre><code>##  [1] &quot;DBN&quot;                                       
-##  [2] &quot;School Name&quot;                               
-##  [3] &quot;Year&quot;                                      
-##  [4] &quot;Total Enrollment&quot;                          
-##  [5] &quot;Grade PK (Half Day &amp; Full Day)&quot;            
-##  [6] &quot;Grade K&quot;                                   
-##  [7] &quot;Grade 1&quot;                                   
-##  [8] &quot;Grade 2&quot;                                   
-##  [9] &quot;Grade 3&quot;                                   
-## [10] &quot;Grade 4&quot;                                   
-## [11] &quot;Grade 5&quot;                                   
-## [12] &quot;Grade 6&quot;                                   
-## [13] &quot;Grade 7&quot;                                   
-## [14] &quot;Grade 8&quot;                                   
-## [15] &quot;Grade 9&quot;                                   
-## [16] &quot;Grade 10&quot;                                  
-## [17] &quot;Grade 11&quot;                                  
-## [18] &quot;Grade 12&quot;                                  
-## [19] &quot;# Female&quot;                                  
-## [20] &quot;% Female&quot;                                  
-## [21] &quot;# Male&quot;                                    
-## [22] &quot;% Male&quot;                                    
-## [23] &quot;# Asian&quot;                                   
-## [24] &quot;% Asian&quot;                                   
-## [25] &quot;# Black&quot;                                   
-## [26] &quot;% Black&quot;                                   
-## [27] &quot;# Hispanic&quot;                                
-## [28] &quot;% Hispanic&quot;                                
-## [29] &quot;# Multiple Race Categories Not Represented&quot;
-## [30] &quot;% Multiple Race Categories Not Represented&quot;
-## [31] &quot;# White&quot;                                   
-## [32] &quot;% White&quot;                                   
-## [33] &quot;# Students with Disabilities&quot;              
-## [34] &quot;% Students with Disabilities&quot;              
-## [35] &quot;# English Language Learners&quot;               
-## [36] &quot;% English Language Learners&quot;               
-## [37] &quot;# Poverty&quot;                                 
-## [38] &quot;% Poverty&quot;                                 
-## [39] &quot;Economic Need Index&quot;</code></pre>
+##   dbn   school_name total_enrollment grade_pk_half_d… grade_k grade_1
+##   &lt;chr&gt; &lt;chr&gt;                  &lt;dbl&gt;            &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 01M0… P.S. 015 R…              178               17      28      33
+## 2 01M0… P.S. 019 A…              271               24      37      46
+## 3 01M0… P.S. 020 A…              540               41      83      83
+## 4 01M0… P.S. 034 F…              350               13      21      24
+## 5 01M0… The STAR A…              200               22      38      37
+## 6 01M0… P.S. 064 R…              247               21      46      34
+## # … with 33 more variables: grade_2 &lt;dbl&gt;, grade_3 &lt;dbl&gt;, grade_4 &lt;dbl&gt;,
+## #   grade_5 &lt;dbl&gt;, grade_6 &lt;dbl&gt;, grade_7 &lt;dbl&gt;, grade_8 &lt;dbl&gt;,
+## #   grade_9 &lt;dbl&gt;, grade_10 &lt;dbl&gt;, grade_11 &lt;dbl&gt;, grade_12 &lt;dbl&gt;,
+## #   number_female &lt;dbl&gt;, percent_female &lt;chr&gt;, number_male &lt;dbl&gt;,
+## #   percent_male &lt;chr&gt;, number_asian &lt;dbl&gt;, percent_asian &lt;chr&gt;,
+## #   number_black &lt;dbl&gt;, percent_black &lt;chr&gt;, number_hispanic &lt;dbl&gt;,
+## #   percent_hispanic &lt;chr&gt;,
+## #   number_multiple_race_categories_not_represented &lt;dbl&gt;,
+## #   percent_multiple_race_categories_not_represented &lt;chr&gt;,
+## #   number_white &lt;dbl&gt;, percent_white &lt;chr&gt;,
+## #   number_students_with_disabilities &lt;dbl&gt;,
+## #   percent_students_with_disabilities &lt;chr&gt;,
+## #   number_english_language_learners &lt;dbl&gt;,
+## #   percent_english_language_learners &lt;chr&gt;, number_poverty &lt;dbl&gt;,
+## #   percent_poverty &lt;chr&gt;, economic_need_index &lt;chr&gt;, school_year &lt;chr&gt;</code></pre>
+<pre class="r"><code>#skimr::skim(demo)
+view(demo)</code></pre>
 <p>lead data</p>
-<pre class="r"><code>lead &lt;- read_csv(&quot;./school_data/2017_water_lead.csv&quot;) </code></pre>
+<pre class="r"><code>lead &lt;- read_csv(&quot;./school_data/2017_water_lead.csv&quot;) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  mutate(number_of_elevated_samples = as.numeric(number_of_elevated_samples)) %&gt;% 
+  mutate(number_of_samples_tested = as.numeric(number_of_samples_tested)) %&gt;%
+  mutate(percent_elevated = 
+           round((number_of_elevated_samples / number_of_samples_tested)*100, 2)) %&gt;% 
+  mutate(geographical_district = as.character(geographical_district)) %&gt;% 
+  mutate(geographical_district = 
+           str_pad(geographical_district, width=2, side=&quot;left&quot;, pad=&quot;0&quot;)) %&gt;% 
+  mutate(dbn = str_c(geographical_district, building_code)) %&gt;% 
+  drop_na(elevated_result) %&gt;%
+  arrange(dbn)</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
 ##   Borough = col_character(),
@@ -304,27 +325,44 @@ theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
 ##   `Number of Samples Tested` = col_character(),
 ##   `Number of Elevated Samples` = col_character()
 ## )</code></pre>
-<pre class="r"><code>head(lead)</code></pre>
-<pre><code>## # A tibble: 6 x 9
-##   Borough `Geographical D… `Building Code` `Building Name` `Building Addre…
-##   &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;           
-## 1 K                     15 K001            P.S. 1 - BROOK… 309 47 STREET   
-## 2 K                     17 K002            I.S. 2 - BROOK… 655 PARKSIDE AV…
-## 3 K                     13 K003            P.S. 3 - BROOK… 50 JEFFERSON AV…
-## 4 K                     16 K005            P.S. 5 - BROOK… 820 HANCOCK STR…
-## 5 K                     17 K006            P.S. 6 - BROOK… 43 SNYDER AVENUE
-## 6 K                     19 K007            P.S. 7 - BROOK… 858 JAMAICA AVE…
-## # … with 4 more variables: `Elevated Result` &lt;chr&gt;, `Date of Initial
-## #   Test` &lt;chr&gt;, `Number of Samples Tested` &lt;chr&gt;, `Number of Elevated
-## #   Samples` &lt;chr&gt;</code></pre>
 <pre class="r"><code>names(lead)</code></pre>
-<pre><code>## [1] &quot;Borough&quot;                    &quot;Geographical District&quot;     
-## [3] &quot;Building Code&quot;              &quot;Building Name&quot;             
-## [5] &quot;Building Address&quot;           &quot;Elevated Result&quot;           
-## [7] &quot;Date of Initial Test&quot;       &quot;Number of Samples Tested&quot;  
-## [9] &quot;Number of Elevated Samples&quot;</code></pre>
+<pre><code>##  [1] &quot;borough&quot;                    &quot;geographical_district&quot;     
+##  [3] &quot;building_code&quot;              &quot;building_name&quot;             
+##  [5] &quot;building_address&quot;           &quot;elevated_result&quot;           
+##  [7] &quot;date_of_initial_test&quot;       &quot;number_of_samples_tested&quot;  
+##  [9] &quot;number_of_elevated_samples&quot; &quot;percent_elevated&quot;          
+## [11] &quot;dbn&quot;</code></pre>
+<pre class="r"><code>skimr::skim(lead)</code></pre>
+<pre><code>## Skim summary statistics
+##  n obs: 1544 
+##  n variables: 11 
+## 
+## ── Variable type:character ─────────────────────────────────────────────────────────────────────────
+##               variable missing complete    n min max empty n_unique
+##                borough       0     1544 1544   1   1     0        5
+##       building_address       0     1544 1544  10  36     0     1388
+##          building_code       0     1544 1544   4   4     0     1544
+##          building_name       0     1544 1544   9  50     0     1541
+##   date_of_initial_test       0     1544 1544   8  31     0      112
+##                    dbn       0     1544 1544   6   6     0     1544
+##        elevated_result       0     1544 1544   2   3     0        2
+##  geographical_district       0     1544 1544   2   2     0       32
+## 
+## ── Variable type:numeric ───────────────────────────────────────────────────────────────────────────
+##                    variable missing complete    n  mean    sd p0   p25
+##  number_of_elevated_samples       3     1541 1544  6.9   8.74  0  1   
+##    number_of_samples_tested       3     1541 1544 85.84 56.05  1 42   
+##            percent_elevated       3     1541 1544  8.32 10.54  0  2.02
+##    p50    p75 p100     hist
+##   4      9     101 ▇▁▁▁▁▁▁▁
+##  83    124     359 ▇▇▇▅▁▁▁▁
+##   5.77  10.87  100 ▇▂▁▁▁▁▁▁</code></pre>
+<pre class="r"><code>view(lead)</code></pre>
 <p>scores</p>
-<pre class="r"><code>ela_scores &lt;- read_csv(&quot;./school_data/ela_scores.csv&quot;) </code></pre>
+<pre class="r"><code>ela_scores &lt;- read_csv(&quot;./school_data/ela_scores.csv&quot;) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  filter(year %in% c(&quot;2016&quot;, &quot;2017&quot;)) %&gt;% 
+  arrange(dbn, year)</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
 ##   X1 = col_character(),
@@ -348,26 +386,31 @@ theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
 ## )</code></pre>
 <pre class="r"><code>head(ela_scores)</code></pre>
 <pre><code>## # A tibble: 6 x 18
-##   X1    DBN   `School Name` Grade  Year Category `Number Tested`
-##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
-## 1 01M0… 01M0… P.S. 015 ROB… 3      2013 All Stu…              27
-## 2 01M0… 01M0… P.S. 015 ROB… 3      2014 All Stu…              18
-## 3 01M0… 01M0… P.S. 015 ROB… 3      2015 All Stu…              16
-## 4 01M0… 01M0… P.S. 015 ROB… 3      2016 All Stu…              20
-## 5 01M0… 01M0… P.S. 015 ROB… 3      2017 All Stu…              27
-## 6 01M0… 01M0… P.S. 015 ROB… 3      2018 All Stu…              20
-## # … with 11 more variables: `Mean Scale Score` &lt;chr&gt;, `# Level 1` &lt;chr&gt;,
-## #   `% Level 1` &lt;chr&gt;, `# Level 2` &lt;chr&gt;, `% Level 2` &lt;chr&gt;, `# Level
-## #   3` &lt;chr&gt;, `% Level 3` &lt;chr&gt;, `# Level 4` &lt;chr&gt;, `% Level 4` &lt;chr&gt;, `#
-## #   Level 3+4` &lt;chr&gt;, `% Level 3+4` &lt;chr&gt;</code></pre>
+##   x1    dbn   school_name grade  year category number_tested
+##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;            &lt;dbl&gt;
+## 1 01M0… 01M0… P.S. 015 R… 3      2016 All Stu…            20
+## 2 01M0… 01M0… P.S. 015 R… 4      2016 All Stu…            15
+## 3 01M0… 01M0… P.S. 015 R… 5      2016 All Stu…            16
+## 4 01M0… 01M0… P.S. 015 R… All …  2016 All Stu…            51
+## 5 01M0… 01M0… P.S. 015 R… 3      2017 All Stu…            27
+## 6 01M0… 01M0… P.S. 015 R… 4      2017 All Stu…            23
+## # … with 11 more variables: mean_scale_score &lt;chr&gt;, number_level_1 &lt;chr&gt;,
+## #   percent_level_1 &lt;chr&gt;, number_level_2 &lt;chr&gt;, percent_level_2 &lt;chr&gt;,
+## #   number_level_3 &lt;chr&gt;, percent_level_3 &lt;chr&gt;, number_level_4 &lt;chr&gt;,
+## #   percent_level_4 &lt;chr&gt;, number_level_3_4 &lt;chr&gt;, percent_level_3_4 &lt;chr&gt;</code></pre>
 <pre class="r"><code>names(ela_scores)</code></pre>
-<pre><code>##  [1] &quot;X1&quot;               &quot;DBN&quot;              &quot;School Name&quot;     
-##  [4] &quot;Grade&quot;            &quot;Year&quot;             &quot;Category&quot;        
-##  [7] &quot;Number Tested&quot;    &quot;Mean Scale Score&quot; &quot;# Level 1&quot;       
-## [10] &quot;% Level 1&quot;        &quot;# Level 2&quot;        &quot;% Level 2&quot;       
-## [13] &quot;# Level 3&quot;        &quot;% Level 3&quot;        &quot;# Level 4&quot;       
-## [16] &quot;% Level 4&quot;        &quot;# Level 3+4&quot;      &quot;% Level 3+4&quot;</code></pre>
-<pre class="r"><code>math_scores &lt;- read_csv(&quot;./school_data/math_scores.csv&quot;) </code></pre>
+<pre><code>##  [1] &quot;x1&quot;                &quot;dbn&quot;               &quot;school_name&quot;      
+##  [4] &quot;grade&quot;             &quot;year&quot;              &quot;category&quot;         
+##  [7] &quot;number_tested&quot;     &quot;mean_scale_score&quot;  &quot;number_level_1&quot;   
+## [10] &quot;percent_level_1&quot;   &quot;number_level_2&quot;    &quot;percent_level_2&quot;  
+## [13] &quot;number_level_3&quot;    &quot;percent_level_3&quot;   &quot;number_level_4&quot;   
+## [16] &quot;percent_level_4&quot;   &quot;number_level_3_4&quot;  &quot;percent_level_3_4&quot;</code></pre>
+<pre class="r"><code>#view(ela_scores)
+
+math_scores &lt;- read_csv(&quot;./school_data/math_scores.csv&quot;) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  filter(year %in% c(&quot;2016&quot;, &quot;2017&quot;)) %&gt;%
+  arrange(dbn, year)</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
 ##   X1 = col_character(),
@@ -391,26 +434,68 @@ theme_set(theme_minimal() + theme(legend.position = &quot;bottom&quot;))
 ## )</code></pre>
 <pre class="r"><code>head(math_scores)</code></pre>
 <pre><code>## # A tibble: 6 x 18
-##   X1    DBN   `School Name` Grade  Year Category `Number Tested`
-##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
-## 1 01M0… 01M0… P.S. 015 ROB… 3      2013 All Stu…              27
-## 2 01M0… 01M0… P.S. 015 ROB… 3      2014 All Stu…              18
-## 3 01M0… 01M0… P.S. 015 ROB… 3      2015 All Stu…              17
-## 4 01M0… 01M0… P.S. 015 ROB… 3      2016 All Stu…              21
-## 5 01M0… 01M0… P.S. 015 ROB… 3      2017 All Stu…              29
-## 6 01M0… 01M0… P.S. 015 ROB… 3      2018 All Stu…              20
-## # … with 11 more variables: `Mean Scale Score` &lt;chr&gt;, `# Level 1` &lt;chr&gt;,
-## #   `% Level 1` &lt;chr&gt;, `# Level 2` &lt;chr&gt;, `% Level 2` &lt;chr&gt;, `# Level
-## #   3` &lt;chr&gt;, `% Level 3` &lt;chr&gt;, `# Level 4` &lt;chr&gt;, `% Level 4` &lt;chr&gt;, `#
-## #   Level 3+4` &lt;chr&gt;, `% Level 3+4` &lt;chr&gt;</code></pre>
+##   x1    dbn   school_name grade  year category number_tested
+##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;            &lt;dbl&gt;
+## 1 01M0… 01M0… P.S. 015 R… 3      2016 All Stu…            21
+## 2 01M0… 01M0… P.S. 015 R… 4      2016 All Stu…            15
+## 3 01M0… 01M0… P.S. 015 R… 5      2016 All Stu…            16
+## 4 01M0… 01M0… P.S. 015 R… All …  2016 All Stu…            52
+## 5 01M0… 01M0… P.S. 015 R… 3      2017 All Stu…            29
+## 6 01M0… 01M0… P.S. 015 R… 4      2017 All Stu…            23
+## # … with 11 more variables: mean_scale_score &lt;chr&gt;, number_level_1 &lt;chr&gt;,
+## #   percent_level_1 &lt;chr&gt;, number_level_2 &lt;chr&gt;, percent_level_2 &lt;chr&gt;,
+## #   number_level_3 &lt;chr&gt;, percent_level_3 &lt;chr&gt;, number_level_4 &lt;chr&gt;,
+## #   percent_level_4 &lt;chr&gt;, number_level_3_4 &lt;chr&gt;, percent_level_3_4 &lt;chr&gt;</code></pre>
 <pre class="r"><code>names(math_scores)</code></pre>
-<pre><code>##  [1] &quot;X1&quot;               &quot;DBN&quot;              &quot;School Name&quot;     
-##  [4] &quot;Grade&quot;            &quot;Year&quot;             &quot;Category&quot;        
-##  [7] &quot;Number Tested&quot;    &quot;Mean Scale Score&quot; &quot;# Level 1&quot;       
-## [10] &quot;% Level 1&quot;        &quot;# Level 2&quot;        &quot;% Level 2&quot;       
-## [13] &quot;# Level 3&quot;        &quot;% Level 3&quot;        &quot;# Level 4&quot;       
-## [16] &quot;% Level 4&quot;        &quot;# Level 3+4&quot;      &quot;% Level 3+4&quot;</code></pre>
+<pre><code>##  [1] &quot;x1&quot;                &quot;dbn&quot;               &quot;school_name&quot;      
+##  [4] &quot;grade&quot;             &quot;year&quot;              &quot;category&quot;         
+##  [7] &quot;number_tested&quot;     &quot;mean_scale_score&quot;  &quot;number_level_1&quot;   
+## [10] &quot;percent_level_1&quot;   &quot;number_level_2&quot;    &quot;percent_level_2&quot;  
+## [13] &quot;number_level_3&quot;    &quot;percent_level_3&quot;   &quot;number_level_4&quot;   
+## [16] &quot;percent_level_4&quot;   &quot;number_level_3_4&quot;  &quot;percent_level_3_4&quot;</code></pre>
+<pre class="r"><code>#view(math_scores)</code></pre>
 <p>merged_files</p>
+<pre class="r"><code>demo_lead &lt;- left_join(lead, demo, by = &quot;dbn&quot;) %&gt;%
+  drop_na()
+
+
+#once we match the demographics dataset to the lead results, the sample size decreases from 1544 (N of lead results) to 828 </code></pre>
+<p>Descriptive stats &amp; visualization</p>
+<pre class="r"><code>a = demo_lead %&gt;% 
+  mutate(
+    borough = recode(borough, &quot;M&quot; = &quot;Manhattan&quot;, &quot;K&quot; = &quot;Brooklyn&quot;, 
+                        &quot;Q&quot; = &quot;Queens&quot;, &quot;X&quot; = &quot;Bronx&quot;,
+                        &quot;R&quot; = &quot;Staten Island&quot;)) %&gt;% 
+  group_by(borough) %&gt;% 
+  summarise(mean_percent_elevated = mean(percent_elevated)) 
+
+a = a %&gt;% 
+  ggplot(aes(x = borough, y = mean_percent_elevated)) + 
+  geom_col() 
+
+b = demo_lead %&gt;% 
+  select(elevated_result, percent_female, percent_asian, percent_black, percent_hispanic, 
+         percent_white, percent_students_with_disabilities, percent_english_language_learners,
+         percent_poverty) %&gt;% 
+  pivot_longer(
+    cols = starts_with(&quot;percent_&quot;),
+    names_to = &quot;racial_breakdown&quot;,
+    names_prefix = &quot;percent_&quot;,
+    values_to = &quot;percent&quot;
+  ) %&gt;%
+  group_by(elevated_result, percent) %&gt;% 
+  summarise(n=n())
+
+  
+c = demo_lead %&gt;% 
+ select(percent_elevated, percent_female) %&gt;%
+ ggplot(aes(x=percent_female, y=percent_elevated)) + 
+ geom_point() 
+   
+d = demo_lead %&gt;% 
+ select(percent_elevated, percent_black) %&gt;%
+ ggplot(aes(x=percent_black, y=percent_elevated)) + 
+ geom_point() </code></pre>
 
 
 
