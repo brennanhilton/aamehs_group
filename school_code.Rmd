@@ -5,8 +5,12 @@ date: "February 26, 2020"
 output: html_document
 ---
 
-```{r setup, message=FALSE}
+```{r setup, include = FALSE, message=FALSE}
+#install.packages("psych")
 library(tidyverse)
+library(magrittr)
+library(pastecs)
+library(psych)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -32,35 +36,40 @@ theme_set(theme_minimal() + theme(legend.position = "bottom"))
 # - the borough code (a capital letter, ie K is for Brooklyn)
 # - the school/building number (3 digits)
 
-
 ```
 
-demographics
-```{r}
+### Demographics
+```{r, message=FALSE}
 demo <- read_csv("./school_data/demographics.csv") %>% 
   janitor::clean_names() %>% 
   filter(year == "2016-17") %>% 
   mutate(school_year = year) %>% 
   select(-year) %>%
-  arrange(dbn)
+  arrange(dbn) 
 
+#Removing the % sign from "percent_" columns for future analyses 
+cols = c(19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 38)
+demo[,cols] %<>% lapply(function(x) parse_number(x))
+
+#The Economic Need Index (ENI) estimates the percentage of students facing economic hardship
+#I also removed the % sign from that column, but need to keep in mind that it's a percentage 
 
 names(demo)
-head(demo)
-#skimr::skim(demo)
-view(demo)
+#str(demo)
+#view(demo)
 
 ```
 
-lead data
-```{r}
+### Lead data
+```{r, message=FALSE}
 lead <- read_csv("./school_data/2017_water_lead.csv") %>% 
   janitor::clean_names() %>% 
-  mutate(number_of_elevated_samples = as.numeric(number_of_elevated_samples)) %>% 
-  mutate(number_of_samples_tested = as.numeric(number_of_samples_tested)) %>%
-  mutate(percent_elevated = 
-           round((number_of_elevated_samples / number_of_samples_tested)*100, 2)) %>% 
-  mutate(geographical_district = as.character(geographical_district)) %>% 
+  mutate(number_of_elevated_samples = as.numeric(number_of_elevated_samples),
+         number_of_samples_tested = as.numeric(number_of_samples_tested),
+         percent_elevated = 
+           round((number_of_elevated_samples / number_of_samples_tested)*100, 2),
+         geographical_district = as.character(geographical_district)) %>% 
+#Adding leading 0 for district numbers while always having 2 digits 
   mutate(geographical_district = 
            str_pad(geographical_district, width=2, side="left", pad="0")) %>% 
   mutate(dbn = str_c(geographical_district, building_code)) %>% 
@@ -69,80 +78,126 @@ lead <- read_csv("./school_data/2017_water_lead.csv") %>%
   
 
 names(lead)
-skimr::skim(lead)
-view(lead)
+#str(lead)
+#view(lead)
 
 ```
 
-scores
-```{r}
+### Scores
+```{r, message=FALSE}
 ela_scores <- read_csv("./school_data/ela_scores.csv") %>% 
   janitor::clean_names() %>% 
   filter(year %in% c("2016", "2017")) %>% 
-  arrange(dbn, year)
+  arrange(dbn, year) %>% 
+  rename(mean_ela_score = "mean_scale_score", number_tested_ela = "number_tested") %>% 
+  select(dbn:mean_ela_score)
 
-head(ela_scores)
+
 names(ela_scores)
+#str(ela_scores)
 #view(ela_scores)
 
 math_scores <- read_csv("./school_data/math_scores.csv") %>% 
   janitor::clean_names() %>% 
   filter(year %in% c("2016", "2017")) %>%
-  arrange(dbn, year)
+  arrange(dbn, year) %>%
+  rename(mean_math_score = "mean_scale_score", number_tested_math = "number_tested") %>% 
+  select(dbn:mean_math_score)
 
-head(math_scores)
 names(math_scores)
+#str(math_scores)
 #view(math_scores)
+
 ```
 
-merged_files 
-```{r}
+### Merged files
+```{r, message=FALSE}
 demo_lead <- left_join(lead, demo, by = "dbn") %>%
-  drop_na()
-
+  drop_na() %>% 
+  select(-building_name, -building_address)
 
 #once we match the demographics dataset to the lead results, the sample size decreases from 1544 (N of lead results) to 828 
 
-  
+ela_math <- merge(math_scores, ela_scores) %>% 
+  arrange(year, dbn) %>% 
+  filter(grade == "All Grades") %>% 
+  mutate(mean_ela_score = as.numeric(mean_ela_score),
+         mean_math_score = as.numeric(mean_math_score)) %>% 
+  select(-school_name)
+
+#I filtered the test scores to only include "all grades" but we also have data for grades 3, 4, and 5 individually 
+
+ela_math_2016 <- ela_math %>% 
+  filter(year == "2016")
+
+ela_math_2017 <- ela_math %>% 
+  filter(year == "2017")
+
+demo_lead_scores_2016 <- left_join(demo_lead, ela_math_2016, by = "dbn") %>% 
+  drop_na()
+
+demo_lead_scores_2017 <- left_join(demo_lead, ela_math_2017, by = "dbn") %>% 
+  drop_na()
+
 ```
 
-Descriptive stats & visualization 
-```{r}
+### Descriptive stats  
+```{r, message=FALSE}
+#Lead stats
 
-a = demo_lead %>% 
-  mutate(
-    borough = recode(borough, "M" = "Manhattan", "K" = "Brooklyn", 
-                        "Q" = "Queens", "X" = "Bronx",
-                        "R" = "Staten Island")) %>% 
-  group_by(borough) %>% 
-  summarise(mean_percent_elevated = mean(percent_elevated)) 
+lead_results <- demo_lead_scores_2016 %>% 
+                select(number_of_samples_tested, number_of_elevated_samples, percent_elevated)
 
-a = a %>% 
-  ggplot(aes(x = borough, y = mean_percent_elevated)) + 
-  geom_col() 
+describe(lead_results) %>% 
+  knitr::kable(digits = 2)
 
-b = demo_lead %>% 
-  select(elevated_result, percent_female, percent_asian, percent_black, percent_hispanic, 
-         percent_white, percent_students_with_disabilities, percent_english_language_learners,
-         percent_poverty) %>% 
+skimr::skim(lead_results) 
+
+#Demographics stats 
+
+demo_trends <- demo_lead_scores_2016 %>% 
+                select(starts_with("percent"), economic_need_index)
+
+describe(demo_trends) %>% 
+  knitr::kable(digits = 2)
+
+skimr::skim(demo_trends)
+
+#Scores stats
+
+ela_math_results <- demo_lead_scores_2016 %>%
+                    select(number_tested_math, number_tested_ela, mean_math_score, mean_ela_score)
+
+describe(ela_math_results) %>% 
+  knitr::kable(digits = 2)
+
+skimr::skim(ela_math_results)
+
+```
+
+### Relationships & visualization
+```{r, message=FALSE}
+data = demo_lead_scores_2016 %>% 
+  select(starts_with("percent"), elevated_result, -percent_elevated) %>% 
   pivot_longer(
     cols = starts_with("percent_"),
-    names_to = "racial_breakdown",
+    names_to = "demographics",
     names_prefix = "percent_",
-    values_to = "percent"
-  ) %>%
-  group_by(elevated_result, percent) %>% 
-  summarise(n=n())
-
+    values_to = "school_percentage") %>%
+  group_by(elevated_result, demographics) %>% 
+  summarise(average_percentage = mean(school_percentage)) 
   
-c = demo_lead %>% 
- select(percent_elevated, percent_female) %>%
- ggplot(aes(x=percent_female, y=percent_elevated)) + 
- geom_point() 
-   
-d = demo_lead %>% 
- select(percent_elevated, percent_black) %>%
- ggplot(aes(x=percent_black, y=percent_elevated)) + 
- geom_point() 
+plot_1 = ggplot(data, aes(fill=demographics, y=average_percentage, x=elevated_result)) + 
+    geom_bar(position="dodge", stat="identity") + 
+    labs(x = "Elevated Lead Result", y = "Demographics (%)")
+
+plot_1
+
+#plot_2 = ggplot(data, aes(fill=elevated_result, y=average_percentage, #x=demographics)) + 
+    #geom_bar(position="dodge", stat="identity") + 
+    #labs(x = "Demographics(%)", y = "Elevated Lead Result")
+
+#plot_2
 ```
+
 
