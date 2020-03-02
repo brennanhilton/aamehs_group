@@ -177,7 +177,10 @@ skimr::skim(ela_math_results)
 
 ### Relationships & visualization
 ```{r, message=FALSE}
-data = demo_lead_scores_2016 %>% 
+
+#Demographics & lead 
+
+dem_lead = demo_lead_scores_2016 %>% 
   select(starts_with("percent"), elevated_result, -percent_elevated) %>% 
   pivot_longer(
     cols = starts_with("percent_"),
@@ -187,17 +190,60 @@ data = demo_lead_scores_2016 %>%
   group_by(elevated_result, demographics) %>% 
   summarise(average_percentage = mean(school_percentage)) 
   
-plot_1 = ggplot(data, aes(fill=demographics, y=average_percentage, x=elevated_result)) + 
+ggplot(dem_lead, aes(fill=demographics, y=average_percentage, x=elevated_result)) + 
     geom_bar(position="dodge", stat="identity") + 
     labs(x = "Elevated Lead Result", y = "Demographics (%)")
 
-plot_1
 
-#plot_2 = ggplot(data, aes(fill=elevated_result, y=average_percentage, #x=demographics)) + 
+#ggplot(data, aes(fill=elevated_result, y=average_percentage, #x=demographics)) + 
     #geom_bar(position="dodge", stat="identity") + 
     #labs(x = "Demographics(%)", y = "Elevated Lead Result")
 
-#plot_2
+
+#Demographics & test scores 
+
+dem_scores = demo_lead_scores_2016 %>% 
+  select(starts_with("percent"), mean_math_score, mean_ela_score, -percent_elevated) %>%
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "subject",
+    names_prefix = "mean_",
+    values_to = "mean_score")
+
+ggplot(dem_scores, aes(y = mean_score)) + 
+  #geom_point(aes(x=percent_white, color="% White")) + 
+  geom_smooth(method = "lm", aes(x=percent_white, color="% White")) +
+  #geom_point(aes(x=percent_black, color="% Black")) + 
+  geom_smooth(method = "lm", aes(x=percent_black, color="% Black")) + 
+  #geom_point(aes(x=percent_poverty, color="% Poverty")) + 
+  geom_smooth(method = "lm", aes(x=percent_poverty, color="% Poverty")) + 
+  facet_grid(~subject) + 
+  labs(x = "Demographics (%)", y = "Mean Score")
+
+#Lead & test scores 
+
+lead_scores = demo_lead_scores_2016 %>% 
+  select(mean_math_score, mean_ela_score, elevated_result, 
+         percent_elevated, borough) %>% 
+   pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "subject",
+    names_prefix = "mean_",
+    values_to = "mean_score")
+
+lead_scores %>% 
+ ggplot(aes(y = mean_score)) + 
+  geom_point(aes(x=percent_elevated, color="% Elevated")) + 
+  geom_smooth(method = "lm", aes(x=percent_elevated, color="% Elevated")) + 
+  facet_grid(~subject)
+
+lead_scores %>% 
+  group_by(elevated_result, mean_score) %>% 
+  ggplot(aes(fill=subject, y=mean_score, x=elevated_result)) + 
+    geom_bar(position="dodge", stat="identity") + 
+    labs(x = "Elevated Lead Result", y = "Mean Score") + 
+  facet_grid(~borough)
+
 ```
 
 
