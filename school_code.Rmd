@@ -175,7 +175,27 @@ skimr::skim(ela_math_results)
 
 ```
 
-### Relationships & visualization
+### Visualization of distributions 
+```{r}
+ demo_lead_scores_2016 %>% 
+  ggplot(aes(x = mean_math_score)) + 
+  geom_histogram(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
+  labs(x = "Mean Math Score", y = "Count")
+
+ demo_lead_scores_2016 %>% 
+  ggplot(aes(x = mean_ela_score)) + 
+  geom_histogram(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
+  labs(x = "Mean ELA Score", y = "Count")
+ 
+demo_lead_scores_2016 %>% 
+  ggplot(aes(x = percent_elevated)) + 
+  geom_histogram(binwidth = 2, color = "#DCE319FF", fill = "#DCE319FF", alpha=.2) + 
+  labs(x = "Percent of Tested Samples with Elevated Lead", y = "Count")
+ 
+```
+
+
+### Visualization of relationships 
 ```{r, message=FALSE}
 
 #Demographics & lead 
