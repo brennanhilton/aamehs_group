@@ -212,7 +212,8 @@ dem_lead = demo_lead_scores_2016 %>%
   
 ggplot(dem_lead, aes(fill=demographics, y=average_percentage, x=elevated_result)) + 
     geom_bar(position="dodge", stat="identity") + 
-    labs(x = "Elevated Lead Result", y = "Demographics (%)")
+    labs(x = "Elevated Lead Result", y = "Demographic Breakdown (%)") + 
+    theme(legend.position="right")
 
 
 #ggplot(data, aes(fill=elevated_result, y=average_percentage, #x=demographics)) + 
