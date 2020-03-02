@@ -195,6 +195,34 @@ demo_lead_scores_2016 %>%
 ```
 
 
+```{r vizualizing distributions with boxplot}
+view(demo_lead_scores_2016)
+
+demo_lead_scores_2016 %>%
+  group_by(mean_math_score) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = mean_math_score, y = n)) + 
+  geom_boxplot(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
+  labs(x = "Mean Math Score", y = "Count")
+
+demo_lead_scores_2016 %>%
+  group_by(mean_ela_score) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = mean_ela_score, y = n)) + 
+  geom_boxplot(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
+  labs(x = "Mean ELA Score", y = "Count")
+
+#does not present data correctly
+demo_lead_scores_2016 %>% 
+  group_by(percent_elevated) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = percent_elevated, y = n)) + 
+  geom_boxplot(binwidth = 2, color = "#DCE319FF", fill = "#DCE319FF", alpha=.2) + 
+  labs(x = "Percent of Tested Samples with Elevated Lead", y = "Count")
+
+```
+
+
 ### Visualization of relationships 
 ```{r, message=FALSE}
 
@@ -267,4 +295,8 @@ lead_scores %>%
 
 ```
 
+#Exporting images to png files
+```{r}
+
+```
 
