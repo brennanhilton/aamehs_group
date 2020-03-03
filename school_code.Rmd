@@ -75,7 +75,7 @@ lead <- read_csv("./school_data/2017_water_lead.csv") %>%
   mutate(geographical_district = 
            str_pad(geographical_district, width=2, side="left", pad="0")) %>% 
   mutate(dbn = str_c(geographical_district, building_code)) %>% 
-  drop_na(elevated_result)
+  drop_na(elevated_result) 
   
 #summary(lead)
 #names(lead)
@@ -115,7 +115,8 @@ math_scores <- read_csv("./school_data/math_scores.csv") %>%
 ```{r, message=FALSE}
 building_codes <- read_excel("./school_data/2017_water_lead.xlsx", sheet = "Building School Key", skip = 1) %>%
   janitor::clean_names() %>%
-  mutate(school_name = toupper(school_name))
+  mutate(school_name = toupper(school_name)) 
+
 
 #view(building_codes)
 #view(ela_scores)
@@ -123,11 +124,12 @@ building_codes <- read_excel("./school_data/2017_water_lead.xlsx", sheet = "Buil
 ela_math <- full_join(math_scores, ela_scores) %>% 
   mutate(mean_ela_score = as.numeric(mean_ela_score),
          mean_math_score = as.numeric(mean_math_score)) %>%
-  filter(grade == "All Grades")
+  filter(grade == "All Grades") 
 
 #view(ela_math)
 
-codes_scores <- left_join(ela_math, building_codes, by = "school_name")
+codes_scores <- left_join(ela_math, building_codes, by = "school_name") %>% 
+  rename(school_name_scores = school_name)
 #view(codes_ela_scores)
 
 codes_demo <- left_join(demo, building_codes, by = "school_name")
@@ -136,13 +138,65 @@ codes_demo <- left_join(demo, building_codes, by = "school_name")
 
 #merging files based on building code
 ```{r}
-codes_demo_lead <- left_join(lead, codes_demo, by = "building_code")
+codes_demo_lead <- left_join(lead, codes_demo, by = "building_code") %>% 
+  rename(school_name_lead = school_name)
+#Adding lead data doubles our observations - something is wrong here. we have more schools tested for lead than tested for scores. E.g. buulding X has 2 schools in it, so 2 schools are assigned the lead data from testing that building. But only 1 school in the building was tested for math and ela. We needd to remove the school that was not tester by filtering so that school_name_scores == school_name_lead - the school name from the lead dataset equals the school name from the testing dataset.
 
 summary(codes_demo_lead)
-codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")
 
-summary(codes_demo_lead_scores)
+codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")%>% filter(school_name_lead == school_name_scores) %>% group_by(year, school_name_scores) %>% 
+  summarize(number_of_samples_tested = sum(number_of_samples_tested),
+            number_of_elevated_samples = sum(number_of_elevated_samples),
+            math_score = mean(mean_math_score),
+            ela_score = mean(mean_ela_score)) %>% 
+  mutate(percent_elevated = number_of_elevated_samples/number_of_samples_tested) %>% 
+  ungroup() %>% rename(school_name=school_name_scores) 
+
+
+final_data <- codes_demo_lead_scores %>% left_join(demo, by = "school_name") %>% drop_na()
+
+#numebrs make sense now - we have 2177 data points for test scores, and 2064 data points in our final data set. 
 ```
+
+###2017 models
+```{r}
+data_2017 = final_data %>% filter(year == "2017") 
+#NoteL glm with link=logit when the outcome is a proportion. Properties of logit - bound between 0 and 1! I also read that it is ok for the predictor variables to be a proportion in linear models, but we should ask Marianthi just in case.  
+
+
+#ses model - no significant ses predictors of elevated lead
+model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2017)
+broom::tidy(model)
+
+#scores models
+#elevated lead predicts math scores but not ela scores, controlling for ses. Economic need index and percent english language learners are also strong predictors of both scores.
+model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
+broom::tidy(model)
+
+
+model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
+broom::tidy(model)
+```
+
+###2016 models. Here lead predicts math and ela scores.
+```{r}
+data_2016 = final_data %>% filter(year == "2016") 
+#NoteL glm with link=logit when the outcome is a proportion. Properties of logit - bound between 0 and 1! I also read that it is ok for the predictor variables to be a proportion in linear models, but we should ask Marianthi just in case.  
+
+
+
+model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2016)
+broom::tidy(model)
+
+
+model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
+broom::tidy(model)
+
+
+model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
+broom::tidy(model)
+```
+
 
 
 ### Merged files (OLD)
