@@ -11,6 +11,7 @@ library(tidyverse)
 library(magrittr)
 library(pastecs)
 library(psych)
+library(readxl)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -83,6 +84,7 @@ names(lead)
 
 ```
 
+
 ### Scores
 ```{r, message=FALSE}
 ela_scores <- read_csv("./school_data/ela_scores.csv") %>% 
@@ -91,7 +93,6 @@ ela_scores <- read_csv("./school_data/ela_scores.csv") %>%
   arrange(dbn, year) %>% 
   rename(mean_ela_score = "mean_scale_score", number_tested_ela = "number_tested") %>% 
   select(dbn:mean_ela_score)
-
 
 names(ela_scores)
 #str(ela_scores)
@@ -109,6 +110,23 @@ names(math_scores)
 #view(math_scores)
 
 ```
+
+#adds building codes to math and ela datasets
+```{r}
+building_codes <- read_excel("./school_data/2017_water_lead.xlsx", sheet = "Building School Key", skip = 1) %>%
+  janitor::clean_names() %>%
+  mutate(school_name = toupper(school_name))
+
+view(building_codes)
+view(ela_scores)
+
+codes_ela_scores <- left_join(ela_scores, building_codes, by = "school_name")
+view(codes_ela_scores)
+
+codes_math_scores <- left_join(math_scores, building_codes, by = "school_name")
+view(codes_math_scores)
+```
+
 
 ### Merged files
 ```{r, message=FALSE}

@@ -462,7 +462,6 @@ names(lead)</code></pre>
   rename(mean_ela_score = &quot;mean_scale_score&quot;, number_tested_ela = &quot;number_tested&quot;) %&gt;% 
   select(dbn:mean_ela_score)
 
-
 names(ela_scores)</code></pre>
 <pre><code>## [1] &quot;dbn&quot;               &quot;school_name&quot;       &quot;grade&quot;            
 ## [4] &quot;year&quot;              &quot;category&quot;          &quot;number_tested_ela&quot;
@@ -483,6 +482,19 @@ names(math_scores)</code></pre>
 ## [7] &quot;mean_math_score&quot;</code></pre>
 <pre class="r"><code>#str(math_scores)
 #view(math_scores)</code></pre>
+<p>#adds building codes to math and ela datasets</p>
+<pre class="r"><code>building_codes &lt;- read_excel(&quot;./school_data/2017_water_lead.xlsx&quot;, sheet = &quot;Building School Key&quot;, skip = 1) %&gt;%
+  janitor::clean_names() %&gt;%
+  mutate(school_name = toupper(school_name))
+
+view(building_codes)
+view(ela_scores)
+
+codes_ela_scores &lt;- left_join(ela_scores, building_codes, by = &quot;school_name&quot;)
+view(codes_ela_scores)
+
+codes_math_scores &lt;- left_join(math_scores, building_codes, by = &quot;school_name&quot;)
+view(codes_math_scores)</code></pre>
 </div>
 <div id="merged-files" class="section level3">
 <h3>Merged files</h3>
