@@ -46,7 +46,8 @@ demo <- read_csv("./school_data/demographics.csv") %>%
   filter(year == "2016-17") %>% 
   mutate(school_year = year) %>% 
   select(-year) %>%
-  arrange(dbn) 
+  mutate(school_name = toupper(school_name)) %>%
+  drop_na(school_name)
 
 #Removing the % sign from "percent_" columns for future analyses 
 cols = c(19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 38)
@@ -55,7 +56,7 @@ demo[,cols] %<>% lapply(function(x) parse_number(x))
 #The Economic Need Index (ENI) estimates the percentage of students facing economic hardship
 #I also removed the % sign from that column, but need to keep in mind that it's a percentage 
 
-names(demo)
+#names(demo)
 #str(demo)
 #view(demo)
 
@@ -74,11 +75,10 @@ lead <- read_csv("./school_data/2017_water_lead.csv") %>%
   mutate(geographical_district = 
            str_pad(geographical_district, width=2, side="left", pad="0")) %>% 
   mutate(dbn = str_c(geographical_district, building_code)) %>% 
-  drop_na(elevated_result) %>%
-  arrange(dbn)
+  drop_na(elevated_result)
   
-
-names(lead)
+#summary(lead)
+#names(lead)
 #str(lead)
 #view(lead)
 
@@ -105,31 +105,48 @@ math_scores <- read_csv("./school_data/math_scores.csv") %>%
   rename(mean_math_score = "mean_scale_score", number_tested_math = "number_tested") %>% 
   select(dbn:mean_math_score)
 
-names(math_scores)
+#names(math_scores)
 #str(math_scores)
 #view(math_scores)
 
 ```
 
-#adds building codes to math and ela datasets
-```{r}
+#adds building codes to math, ela and demo datasets
+```{r, message=FALSE}
 building_codes <- read_excel("./school_data/2017_water_lead.xlsx", sheet = "Building School Key", skip = 1) %>%
   janitor::clean_names() %>%
   mutate(school_name = toupper(school_name))
 
-view(building_codes)
-view(ela_scores)
+#view(building_codes)
+#view(ela_scores)
 
-codes_ela_scores <- left_join(ela_scores, building_codes, by = "school_name")
-view(codes_ela_scores)
+ela_math <- full_join(math_scores, ela_scores) %>% 
+  mutate(mean_ela_score = as.numeric(mean_ela_score),
+         mean_math_score = as.numeric(mean_math_score)) %>%
+  filter(grade == "All Grades")
 
-codes_math_scores <- left_join(math_scores, building_codes, by = "school_name")
-view(codes_math_scores)
+#view(ela_math)
+
+codes_scores <- left_join(ela_math, building_codes, by = "school_name")
+#view(codes_ela_scores)
+
+codes_demo <- left_join(demo, building_codes, by = "school_name")
+#view(codes_demo)
+```
+
+#merging files based on building code
+```{r}
+codes_demo_lead <- left_join(lead, codes_demo, by = "building_code")
+
+summary(codes_demo_lead)
+codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")
+
+summary(codes_demo_lead_scores)
 ```
 
 
-### Merged files
-```{r, message=FALSE}
+### Merged files (OLD)
+```{r OLD merging code, eval=FALSE}
 demo_lead <- left_join(lead, demo, by = "dbn") %>%
   drop_na() %>% 
   select(-building_name, -building_address)
@@ -163,7 +180,8 @@ demo_lead_scores_2017 <- left_join(demo_lead, ela_math_2017, by = "dbn") %>%
 ```{r, message=FALSE}
 #Lead stats
 
-lead_results <- demo_lead_scores_2016 %>% 
+lead_results <- codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
                 select(number_of_samples_tested, number_of_elevated_samples, percent_elevated)
 
 describe(lead_results) %>% 
@@ -173,7 +191,8 @@ skimr::skim(lead_results)
 
 #Demographics stats 
 
-demo_trends <- demo_lead_scores_2016 %>% 
+demo_trends <- codes_demo_lead_scores %>%
+  filter(year == "2016") %>% 
                 select(starts_with("percent"), economic_need_index)
 
 describe(demo_trends) %>% 
@@ -183,7 +202,8 @@ skimr::skim(demo_trends)
 
 #Scores stats
 
-ela_math_results <- demo_lead_scores_2016 %>%
+ela_math_results <- codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
                     select(number_tested_math, number_tested_ela, mean_math_score, mean_ela_score)
 
 describe(ela_math_results) %>% 
@@ -195,17 +215,20 @@ skimr::skim(ela_math_results)
 
 ### Visualization of distributions 
 ```{r}
- demo_lead_scores_2016 %>% 
+ codes_demo_lead_scores %>%
+  filter(year == "2016") %>% 
   ggplot(aes(x = mean_math_score)) + 
   geom_histogram(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
   labs(x = "Mean Math Score", y = "Count")
 
- demo_lead_scores_2016 %>% 
+ codes_demo_lead_scores %>%
+  filter(year == "2016") %>% 
   ggplot(aes(x = mean_ela_score)) + 
   geom_histogram(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
   labs(x = "Mean ELA Score", y = "Count")
  
-demo_lead_scores_2016 %>% 
+codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   ggplot(aes(x = percent_elevated)) + 
   geom_histogram(binwidth = 2, color = "#DCE319FF", fill = "#DCE319FF", alpha=.2) + 
   labs(x = "Percent of Tested Samples with Elevated Lead", y = "Count")
@@ -214,16 +237,17 @@ demo_lead_scores_2016 %>%
 
 
 ```{r vizualizing distributions with boxplot}
-view(demo_lead_scores_2016)
 
-demo_lead_scores_2016 %>%
+codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   group_by(mean_math_score) %>%
   summarize(n = n()) %>%
   ggplot(aes(x = mean_math_score, y = n)) + 
   geom_boxplot(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
   labs(x = "Mean Math Score", y = "Count")
 
-demo_lead_scores_2016 %>%
+codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   group_by(mean_ela_score) %>%
   summarize(n = n()) %>%
   ggplot(aes(x = mean_ela_score, y = n)) + 
@@ -231,7 +255,8 @@ demo_lead_scores_2016 %>%
   labs(x = "Mean ELA Score", y = "Count")
 
 #does not present data correctly
-demo_lead_scores_2016 %>% 
+codes_demo_lead_scores %>%
+  filter(year == "2016") %>% 
   group_by(percent_elevated) %>%
   summarize(n = n()) %>%
   ggplot(aes(x = percent_elevated, y = n)) + 
@@ -246,7 +271,8 @@ demo_lead_scores_2016 %>%
 
 #Demographics & lead 
 
-dem_lead = demo_lead_scores_2016 %>% 
+dem_lead = codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   select(starts_with("percent"), elevated_result, -percent_elevated) %>% 
   pivot_longer(
     cols = starts_with("percent_"),
@@ -269,7 +295,8 @@ ggplot(dem_lead, aes(fill=demographics, y=average_percentage, x=elevated_result)
 
 #Demographics & test scores 
 
-dem_scores = demo_lead_scores_2016 %>% 
+dem_scores = codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   select(starts_with("percent"), mean_math_score, mean_ela_score, -percent_elevated) %>%
   pivot_longer(
     cols = starts_with("mean_"),
@@ -289,7 +316,8 @@ ggplot(dem_scores, aes(y = mean_score)) +
 
 #Lead & test scores 
 
-lead_scores = demo_lead_scores_2016 %>% 
+lead_scores = codes_demo_lead_scores %>%
+  filter(year == "2016") %>%
   select(mean_math_score, mean_ela_score, elevated_result, 
          percent_elevated, borough) %>% 
    pivot_longer(
