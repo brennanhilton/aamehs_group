@@ -144,6 +144,7 @@ codes_demo_lead <- left_join(lead, codes_demo, by = "building_code") %>%
 
 summary(codes_demo_lead)
 
+#in some cases one school goes across multiple buildings. Summarized lead testing for each school.
 codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")%>% filter(school_name_lead == school_name_scores) %>% group_by(year, school_name_scores) %>% 
   summarize(number_of_samples_tested = sum(number_of_samples_tested),
             number_of_elevated_samples = sum(number_of_elevated_samples),
