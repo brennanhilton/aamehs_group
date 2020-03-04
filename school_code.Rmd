@@ -464,12 +464,12 @@ ggplot(predscore.ns.2, aes(percent_elevated)) +
   geom_line(aes(y = predscore)) + 
   geom_line(aes(y = lciscore), color = "darkgrey") + 
   geom_line(aes(y = uciscore), color = "darkgrey") + 
-  geom_rug()
+  geom_rug()+
   xlab("Percent elevated lead taps") + 
   ylab("Predicted ELA score") + 
   theme(axis.text = element_text(size = 15)) + 
   theme(axis.title = element_text(size = 20))
 
-#ggsave("natural spline df2 2016 ela score rug.jpg")
+ggsave("natural spline df2 2016 ela score rug.jpg")
 ```
 
