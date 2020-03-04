@@ -753,9 +753,9 @@ demo_lead_scores_2017 &lt;- left_join(demo_lead, ela_math_2017, by = &quot;dbn&q
 <div id="descriptive-stats" class="section level3">
 <h3>Descriptive stats</h3>
 <pre class="r"><code>#Lead stats
+view(data_2016)
 
-lead_results &lt;- codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;%
+lead_results &lt;- data_2016 %&gt;%
                 select(number_of_samples_tested, number_of_elevated_samples, percent_elevated)
 
 describe(lead_results) %&gt;% 
@@ -765,11 +765,11 @@ skimr::skim(lead_results)
 
 #Demographics stats 
 
-demo_trends &lt;- codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;% 
+demo_trends &lt;- final_data %&gt;% 
                 select(starts_with(&quot;percent&quot;), economic_need_index)
 
 describe(demo_trends) %&gt;% 
+  select(n, mean, sd, median, min, max) %&gt;%
   knitr::kable(digits = 2)
 
 skimr::skim(demo_trends)
@@ -787,18 +787,17 @@ skimr::skim(ela_math_results)</code></pre>
 </div>
 <div id="visualization-of-distributions" class="section level3">
 <h3>Visualization of distributions</h3>
-<pre class="r"><code> codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;% 
-  ggplot(aes(x = mean_math_score)) + 
+<pre class="r"><code> final_data %&gt;% 
+  ggplot(aes(x = math_score)) + 
   geom_histogram(binwidth = 5, color = &quot;#404788FF&quot;, fill = &quot;#404788FF&quot;, alpha=.2) + 
-  labs(x = &quot;Mean Math Score&quot;, y = &quot;Count&quot;)
+  labs(x = &quot;Mean Math Score&quot;, y = &quot;Count&quot;, title = &quot;Mean Math Score 2016-2017&quot;)
 
- codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;% 
-  ggplot(aes(x = mean_ela_score)) + 
+ final_data %&gt;% 
+  ggplot(aes(x = ela_score)) + 
   geom_histogram(binwidth = 5, color = &quot;#238A8DFF&quot;, fill = &quot;#238A8DFF&quot;, alpha=.2) + 
-  labs(x = &quot;Mean ELA Score&quot;, y = &quot;Count&quot;)
+  labs(x = &quot;Mean ELA Score&quot;, y = &quot;Count&quot;, title = &quot;Mean ELA Score 2016-2017&quot;)
  
+#did this ever make a good graph? can&#39;t get it to make sense
 codes_demo_lead_scores %&gt;%
   filter(year == &quot;2016&quot;) %&gt;%
   ggplot(aes(x = percent_elevated)) + 
@@ -831,6 +830,7 @@ codes_demo_lead_scores %&gt;%
 </div>
 <div id="visualization-of-relationships" class="section level3">
 <h3>Visualization of relationships</h3>
+<p>#did this work? can’t get it to run - MS</p>
 <pre class="r"><code>#Demographics &amp; lead 
 
 dem_lead = codes_demo_lead_scores %&gt;%

@@ -240,9 +240,9 @@ demo_lead_scores_2017 <- left_join(demo_lead, ela_math_2017, by = "dbn") %>%
 ### Descriptive stats  
 ```{r, eval=FALSE}
 #Lead stats
+view(data_2016)
 
-lead_results <- codes_demo_lead_scores %>%
-  filter(year == "2016") %>%
+lead_results <- data_2016 %>%
                 select(number_of_samples_tested, number_of_elevated_samples, percent_elevated)
 
 describe(lead_results) %>% 
@@ -252,11 +252,11 @@ skimr::skim(lead_results)
 
 #Demographics stats 
 
-demo_trends <- codes_demo_lead_scores %>%
-  filter(year == "2016") %>% 
+demo_trends <- final_data %>% 
                 select(starts_with("percent"), economic_need_index)
 
 describe(demo_trends) %>% 
+  select(n, mean, sd, median, min, max) %>%
   knitr::kable(digits = 2)
 
 skimr::skim(demo_trends)
@@ -276,18 +276,17 @@ skimr::skim(ela_math_results)
 
 ### Visualization of distributions 
 ```{r, eval = FALSE}
- codes_demo_lead_scores %>%
-  filter(year == "2016") %>% 
-  ggplot(aes(x = mean_math_score)) + 
+ final_data %>% 
+  ggplot(aes(x = math_score)) + 
   geom_histogram(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
-  labs(x = "Mean Math Score", y = "Count")
+  labs(x = "Mean Math Score", y = "Count", title = "Mean Math Score 2016-2017")
 
- codes_demo_lead_scores %>%
-  filter(year == "2016") %>% 
-  ggplot(aes(x = mean_ela_score)) + 
+ final_data %>% 
+  ggplot(aes(x = ela_score)) + 
   geom_histogram(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
-  labs(x = "Mean ELA Score", y = "Count")
+  labs(x = "Mean ELA Score", y = "Count", title = "Mean ELA Score 2016-2017")
  
+#did this ever make a good graph? can't get it to make sense
 codes_demo_lead_scores %>%
   filter(year == "2016") %>%
   ggplot(aes(x = percent_elevated)) + 
@@ -328,6 +327,7 @@ codes_demo_lead_scores %>%
 
 
 ### Visualization of relationships 
+#did this work? can't get it to run - MS
 ```{r, eval=FALSE}
 
 #Demographics & lead 
@@ -402,9 +402,6 @@ lead_scores %>%
 
 ```
 
-```{r }
-
-```
 
 
 
