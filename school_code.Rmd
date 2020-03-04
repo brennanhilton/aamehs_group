@@ -94,7 +94,7 @@ ela_scores <- read_csv("./school_data/ela_scores.csv") %>%
   rename(mean_ela_score = "mean_scale_score", number_tested_ela = "number_tested") %>% 
   select(dbn:mean_ela_score)
 
-names(ela_scores)
+#names(ela_scores)
 #str(ela_scores)
 #view(ela_scores)
 
@@ -167,16 +167,19 @@ data_2017 = final_data %>% filter(year == "2017")
 
 #ses model - no significant ses predictors of elevated lead
 model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2017)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 
 #scores models
 #elevated lead predicts math scores but not ela scores, controlling for ses. Economic need index and percent english language learners are also strong predictors of both scores.
 model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 
 
 model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 ```
 
 ###2016 models. Here lead predicts math and ela scores.
@@ -187,15 +190,18 @@ data_2016 = final_data %>% filter(year == "2016")
 
 
 model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2016)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 
 
 model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 
 
 model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
-broom::tidy(model)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
 ```
 
 
@@ -232,7 +238,7 @@ demo_lead_scores_2017 <- left_join(demo_lead, ela_math_2017, by = "dbn") %>%
 ```
 
 ### Descriptive stats  
-```{r, message=FALSE}
+```{r, eval=FALSE}
 #Lead stats
 
 lead_results <- codes_demo_lead_scores %>%
@@ -269,7 +275,7 @@ skimr::skim(ela_math_results)
 ```
 
 ### Visualization of distributions 
-```{r}
+```{r, eval = FALSE}
  codes_demo_lead_scores %>%
   filter(year == "2016") %>% 
   ggplot(aes(x = mean_math_score)) + 
@@ -291,7 +297,7 @@ codes_demo_lead_scores %>%
 ```
 
 
-```{r vizualizing distributions with boxplot}
+```{r vizualizing distributions with boxplot, eval = FALSE}
 
 codes_demo_lead_scores %>%
   filter(year == "2016") %>%
@@ -322,7 +328,7 @@ codes_demo_lead_scores %>%
 
 
 ### Visualization of relationships 
-```{r, message=FALSE}
+```{r, eval=FALSE}
 
 #Demographics & lead 
 
@@ -395,6 +401,12 @@ lead_scores %>%
   facet_grid(~borough)
 
 ```
+
+```{r }
+
+```
+
+
 
 #Exporting images to png files
 ```{r}
