@@ -797,34 +797,30 @@ skimr::skim(ela_math_results)</code></pre>
   geom_histogram(binwidth = 5, color = &quot;#238A8DFF&quot;, fill = &quot;#238A8DFF&quot;, alpha=.2) + 
   labs(x = &quot;Mean ELA Score&quot;, y = &quot;Count&quot;, title = &quot;Mean ELA Score 2016-2017&quot;)
  
-#did this ever make a good graph? can&#39;t get it to make sense
-codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;%
-  ggplot(aes(x = percent_elevated)) + 
+final_data %&gt;%
+  ggplot(aes(x = number_of_elevated_samples)) + 
   geom_histogram(binwidth = 2, color = &quot;#DCE319FF&quot;, fill = &quot;#DCE319FF&quot;, alpha=.2) + 
-  labs(x = &quot;Percent of Tested Samples with Elevated Lead&quot;, y = &quot;Count&quot;)</code></pre>
+  labs(x = &quot;Number of Samples with Elevated Lead&quot;, y = &quot;Count&quot;, title = &quot;Tested Samples with Elevated Lead 2016-2017&quot;)</code></pre>
 <pre class="r"><code>codes_demo_lead_scores %&gt;%
   filter(year == &quot;2016&quot;) %&gt;%
-  group_by(mean_math_score) %&gt;%
+  group_by(math_score) %&gt;%
   summarize(n = n()) %&gt;%
-  ggplot(aes(x = mean_math_score, y = n)) + 
+  ggplot(aes(x = math_score, y = n)) + 
   geom_boxplot(binwidth = 5, color = &quot;#404788FF&quot;, fill = &quot;#404788FF&quot;, alpha=.2) + 
   labs(x = &quot;Mean Math Score&quot;, y = &quot;Count&quot;)
 
 codes_demo_lead_scores %&gt;%
   filter(year == &quot;2016&quot;) %&gt;%
-  group_by(mean_ela_score) %&gt;%
+  group_by(ela_score) %&gt;%
   summarize(n = n()) %&gt;%
-  ggplot(aes(x = mean_ela_score, y = n)) + 
+  ggplot(aes(x = ela_score, y = n)) + 
   geom_boxplot(binwidth = 5, color = &quot;#238A8DFF&quot;, fill = &quot;#238A8DFF&quot;, alpha=.2) + 
   labs(x = &quot;Mean ELA Score&quot;, y = &quot;Count&quot;)
 
-#does not present data correctly
-codes_demo_lead_scores %&gt;%
-  filter(year == &quot;2016&quot;) %&gt;% 
-  group_by(percent_elevated) %&gt;%
+final_data %&gt;% 
+  group_by(number_of_elevated_samples) %&gt;%
   summarize(n = n()) %&gt;%
-  ggplot(aes(x = percent_elevated, y = n)) + 
+  ggplot(aes(x = number_of_elevated_samples, y = n)) + 
   geom_boxplot(binwidth = 2, color = &quot;#DCE319FF&quot;, fill = &quot;#DCE319FF&quot;, alpha=.2) + 
   labs(x = &quot;Percent of Tested Samples with Elevated Lead&quot;, y = &quot;Count&quot;)</code></pre>
 </div>
@@ -900,7 +896,6 @@ lead_scores %&gt;%
     geom_bar(position=&quot;dodge&quot;, stat=&quot;identity&quot;) + 
     labs(x = &quot;Elevated Lead Result&quot;, y = &quot;Mean Score&quot;) + 
   facet_grid(~borough)</code></pre>
-<p>#Exporting images to png files</p>
 </div>
 
 

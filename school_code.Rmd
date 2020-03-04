@@ -286,12 +286,10 @@ skimr::skim(ela_math_results)
   geom_histogram(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
   labs(x = "Mean ELA Score", y = "Count", title = "Mean ELA Score 2016-2017")
  
-#did this ever make a good graph? can't get it to make sense
-codes_demo_lead_scores %>%
-  filter(year == "2016") %>%
-  ggplot(aes(x = percent_elevated)) + 
+final_data %>%
+  ggplot(aes(x = number_of_elevated_samples)) + 
   geom_histogram(binwidth = 2, color = "#DCE319FF", fill = "#DCE319FF", alpha=.2) + 
-  labs(x = "Percent of Tested Samples with Elevated Lead", y = "Count")
+  labs(x = "Number of Samples with Elevated Lead", y = "Count", title = "Tested Samples with Elevated Lead 2016-2017")
  
 ```
 
@@ -300,26 +298,24 @@ codes_demo_lead_scores %>%
 
 codes_demo_lead_scores %>%
   filter(year == "2016") %>%
-  group_by(mean_math_score) %>%
+  group_by(math_score) %>%
   summarize(n = n()) %>%
-  ggplot(aes(x = mean_math_score, y = n)) + 
+  ggplot(aes(x = math_score, y = n)) + 
   geom_boxplot(binwidth = 5, color = "#404788FF", fill = "#404788FF", alpha=.2) + 
   labs(x = "Mean Math Score", y = "Count")
 
 codes_demo_lead_scores %>%
   filter(year == "2016") %>%
-  group_by(mean_ela_score) %>%
+  group_by(ela_score) %>%
   summarize(n = n()) %>%
-  ggplot(aes(x = mean_ela_score, y = n)) + 
+  ggplot(aes(x = ela_score, y = n)) + 
   geom_boxplot(binwidth = 5, color = "#238A8DFF", fill = "#238A8DFF", alpha=.2) + 
   labs(x = "Mean ELA Score", y = "Count")
 
-#does not present data correctly
-codes_demo_lead_scores %>%
-  filter(year == "2016") %>% 
-  group_by(percent_elevated) %>%
+final_data %>% 
+  group_by(number_of_elevated_samples) %>%
   summarize(n = n()) %>%
-  ggplot(aes(x = percent_elevated, y = n)) + 
+  ggplot(aes(x = number_of_elevated_samples, y = n)) + 
   geom_boxplot(binwidth = 2, color = "#DCE319FF", fill = "#DCE319FF", alpha=.2) + 
   labs(x = "Percent of Tested Samples with Elevated Lead", y = "Count")
 
@@ -403,10 +399,4 @@ lead_scores %>%
 ```
 
 
-
-
-#Exporting images to png files
-```{r}
-
-```
 
