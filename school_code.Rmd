@@ -184,6 +184,7 @@ broom::tidy(model) %>%
 
 ###2016 models. Here lead predicts math and ela scores.
 ```{r}
+#write_csv(final_data, "./final_data.csv")
 data_2016 = final_data %>% filter(year == "2016") 
 #NoteL glm with link=logit when the outcome is a proportion. Properties of logit - bound between 0 and 1! I also read that it is ok for the predictor variables to be a proportion in linear models, but we should ask Marianthi just in case.  
 
@@ -403,8 +404,8 @@ lead_scores %>%
 library(mgcv)
 library(splines)
 gam2 <- gam(math_score ~ s(percent_elevated) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2016)
-summary(gam1)
-plot(gam1)
+summary(gam2)
+plot(gam2)
 #its linear! edf = 1
 gam2 <- gam(ela_score ~ s(percent_elevated) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2016)
 summary(gam2)

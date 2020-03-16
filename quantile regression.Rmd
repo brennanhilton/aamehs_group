@@ -1,0 +1,27 @@
+---
+title: "Untitled"
+author: "Brennan Baker"
+date: "March 16, 2020"
+output: html_document
+---
+```{r}
+library(tidyverse)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+data = read.csv("./final_data.csv")
+data_2016 = data %>% filter(year == "2016") 
+data_2017 = data %>% filter(year == "2017") 
+```
+
+
+```{r}
+
+```
+
