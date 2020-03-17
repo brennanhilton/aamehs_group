@@ -6,6 +6,7 @@ output: html_document
 ---
 ```{r}
 library(tidyverse)
+library(quantreg)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -20,8 +21,137 @@ data_2016 = data %>% filter(year == "2016")
 data_2017 = data %>% filter(year == "2017") 
 ```
 
-
+Quantile regression 10 percentile increments math scores
 ```{r}
+TauList <- seq(0.1, 0.9, by = 0.1)
+TauList
 
+qr.Mods  <- rq(math_score ~ percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners,
+               data = data_2016, 
+               tau = TauList)
+
+# 3c.ii Assemble estimates from each model
+summary(qr.Mods)
+summary.qr.Mods <- summary(qr.Mods, alpha = 0.05)
+
+Model10th   <- c(summary.qr.Mods[[1]]$coefficients[2,1:4])
+Model20th   <- c(summary.qr.Mods[[2]]$coefficients[2,1:4])
+Model30th   <- c(summary.qr.Mods[[3]]$coefficients[2,1:4])
+Model40th   <- c(summary.qr.Mods[[4]]$coefficients[2,1:4])
+Model50th   <- c(summary.qr.Mods[[5]]$coefficients[2,1:4])
+Model60th   <- c(summary.qr.Mods[[6]]$coefficients[2,1:4])
+Model70th   <- c(summary.qr.Mods[[7]]$coefficients[2,1:4])
+Model80th   <- c(summary.qr.Mods[[8]]$coefficients[2,1:4])
+Model90th   <- c(summary.qr.Mods[[9]]$coefficients[2,1:4])
+
+# create dataframe 
+
+coeff.table <- rbind(Model10th, Model20th, Model30th, Model40th, 
+                     Model50th, Model60th, Model70th, Model80th, 
+                     Model90th)
+
+coeff.table <- as.data.frame(coeff.table, stringsAsFactors = FALSE) %>% janitor::clean_names() %>% 
+  mutate(lci = value - (1.96*std_error),
+         uci = value + (1.96*std_error))
+
+# set names for dataframe
+
+
+coeff.table        <- coeff.table %>% 
+          mutate(ModelName = c("10", "20", "30", "40",
+                               "50", "60", "70", "80", 
+                               "90")) 
+
+# 3b.ii Plot
+
+ForestPlot.Mods <- ggplot(data=coeff.table, # defines what dataset we are using
+                  aes(x=ModelName,  # defines variable for the x axis
+                      y=value,      # defines the variable for the point along the y axis
+                      ymin=lci,     # defines the lower bound of the confidence interval
+                      ymax=uci)) +  # define the upper bound of the confidence interval   
+  geom_pointrange() +               # creates a point (y) with line defined by ymin and ymax        
+  geom_errorbar()+                  # creates lines with bars
+  geom_hline(aes(yintercept=1.0), lty=2) + # add a dashed line at y=0 
+  coord_flip() +                                     
+  xlab("Percentile math test score") + ylab("Coefficient for percent elevated lead") +
+  # change the angle of the title of the y-axis
+  #theme(axis.title.y = element_text(angle = 0, vjust = 0.5)) +  
+  # change the size of the axis titles
+  theme(axis.title = element_text(size = 22)) +                 
+  # change the size of the axis text
+  theme(axis.text = element_text(size = 20)) +      
+  # use a white background without gridlines
+  theme(panel.background = element_rect(fill = 'white', color = "black")) 
+
+ForestPlot.Mods
+
+ggsave("2016_math_quantile.jpg")
+write_csv(coeff.table, "coeff_table_quant_reg_math.csv")
 ```
 
+Quantile regression 10 percentile increments ELA scores
+```{r}
+TauList <- seq(0.1, 0.9, by = 0.1)
+TauList
+
+qr.Mods  <- rq(ela_score ~ percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners,
+               data = data_2016, 
+               tau = TauList)
+
+# 3c.ii Assemble estimates from each model
+summary(qr.Mods)
+summary.qr.Mods <- summary(qr.Mods, alpha = 0.05)
+
+Model10th   <- c(summary.qr.Mods[[1]]$coefficients[2,1:4])
+Model20th   <- c(summary.qr.Mods[[2]]$coefficients[2,1:4])
+Model30th   <- c(summary.qr.Mods[[3]]$coefficients[2,1:4])
+Model40th   <- c(summary.qr.Mods[[4]]$coefficients[2,1:4])
+Model50th   <- c(summary.qr.Mods[[5]]$coefficients[2,1:4])
+Model60th   <- c(summary.qr.Mods[[6]]$coefficients[2,1:4])
+Model70th   <- c(summary.qr.Mods[[7]]$coefficients[2,1:4])
+Model80th   <- c(summary.qr.Mods[[8]]$coefficients[2,1:4])
+Model90th   <- c(summary.qr.Mods[[9]]$coefficients[2,1:4])
+
+# create dataframe 
+
+coeff.table <- rbind(Model10th, Model20th, Model30th, Model40th, 
+                     Model50th, Model60th, Model70th, Model80th, 
+                     Model90th)
+
+coeff.table <- as.data.frame(coeff.table, stringsAsFactors = FALSE) %>% janitor::clean_names() %>% 
+  mutate(lci = value - (1.96*std_error),
+         uci = value + (1.96*std_error))
+
+# set names for dataframe
+
+coeff.table        <- coeff.table %>% 
+          mutate(ModelName = c("10", "20", "30", "40",
+                               "50", "60", "70", "80", 
+                               "90")) 
+
+# 3b.ii Plot
+
+ForestPlot.Mods <- ggplot(data=coeff.table, # defines what dataset we are using
+                  aes(x=ModelName,  # defines variable for the x axis
+                      y=value,      # defines the variable for the point along the y axis
+                      ymin=lci,     # defines the lower bound of the confidence interval
+                      ymax=uci)) +  # define the upper bound of the confidence interval   
+  geom_pointrange() +               # creates a point (y) with line defined by ymin and ymax        
+  geom_errorbar()+                  # creates lines with bars
+  geom_hline(aes(yintercept=1.0), lty=2) + # add a dashed line at y=0 
+  coord_flip() +                                     
+  xlab("Percentile ELA test score") + ylab("Coefficient for percent elevated lead") +
+  # change the angle of the title of the y-axis
+  #theme(axis.title.y = element_text(angle = 0, vjust = 0.5)) +  
+  # change the size of the axis titles
+  theme(axis.title = element_text(size = 22)) +                 
+  # change the size of the axis text
+  theme(axis.text = element_text(size = 20)) +      
+  # use a white background without gridlines
+  theme(panel.background = element_rect(fill = 'white', color = "black")) 
+
+ForestPlot.Mods
+
+ggsave("2016_ela_quantile.jpg")
+write_csv(coeff.table, "coeff_table_quant_reg_ela.csv")
+```
