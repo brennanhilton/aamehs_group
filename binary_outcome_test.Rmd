@@ -125,9 +125,9 @@ model_ela <- lm(ela_score ~ elevated_result+percent_white+percent_asian+percent_
 model_ela_table = broom::tidy(model_ela) %>%
   mutate_if(is.numeric, round, 2)
 
-model_dem_table 
-model_math_table 
-model_ela_table
+knitr::kable(model_dem_table)
+knitr::kable(model_math_table)
+knitr::kable(model_ela_table)
 
 ```
 

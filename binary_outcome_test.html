@@ -293,41 +293,209 @@ model_ela &lt;- lm(ela_score ~ elevated_result+percent_white+percent_asian+perce
 model_ela_table = broom::tidy(model_ela) %&gt;%
   mutate_if(is.numeric, round, 2)
 
-model_dem_table </code></pre>
-<pre><code>## # A tibble: 7 x 5
-##   term                              estimate std.error statistic p.value
-##   &lt;chr&gt;                                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-## 1 (Intercept)                          10.5       6.75      1.56    0.12
-## 2 percent_white                        -0.08      0.07     -1.17    0.24
-## 3 percent_asian                        -0.08      0.07     -1.16    0.25
-## 4 percent_black                        -0.07      0.07     -0.99    0.32
-## 5 percent_hispanic                     -0.09      0.07     -1.25    0.21
-## 6 economic_need_index                   0         0.01      0.23    0.82
-## 7 percent_english_language_learners     0         0.01      0.21    0.84</code></pre>
-<pre class="r"><code>model_math_table </code></pre>
-<pre><code>## # A tibble: 8 x 5
-##   term                              estimate std.error statistic p.value
-##   &lt;chr&gt;                                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-## 1 (Intercept)                         326.       14.3      22.8     0   
-## 2 elevated_result                      -1.85      1.47     -1.26    0.21
-## 3 percent_white                         0.16      0.15      1.04    0.3 
-## 4 percent_asian                         0.4       0.15      2.66    0.01
-## 5 percent_black                        -0.14      0.15     -0.92    0.36
-## 6 percent_hispanic                      0.02      0.15      0.15    0.88
-## 7 economic_need_index                  -0.37      0.03    -11.0     0   
-## 8 percent_english_language_learners    -0.28      0.04     -6.61    0</code></pre>
-<pre class="r"><code>model_ela_table</code></pre>
-<pre><code>## # A tibble: 8 x 5
-##   term                              estimate std.error statistic p.value
-##   &lt;chr&gt;                                &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-## 1 (Intercept)                         339.       10.3      33.0     0   
-## 2 elevated_result                      -2.61      1.06     -2.47    0.01
-## 3 percent_white                         0         0.11      0.03    0.98
-## 4 percent_asian                         0.13      0.11      1.16    0.25
-## 5 percent_black                        -0.18      0.11     -1.67    0.1 
-## 6 percent_hispanic                     -0.08      0.11     -0.75    0.45
-## 7 economic_need_index                  -0.33      0.02    -13.5     0   
-## 8 percent_english_language_learners    -0.35      0.03    -11.5     0</code></pre>
+knitr::kable(model_dem_table)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">10.53</td>
+<td align="right">6.75</td>
+<td align="right">1.56</td>
+<td align="right">0.12</td>
+</tr>
+<tr class="even">
+<td align="left">percent_white</td>
+<td align="right">-0.08</td>
+<td align="right">0.07</td>
+<td align="right">-1.17</td>
+<td align="right">0.24</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_asian</td>
+<td align="right">-0.08</td>
+<td align="right">0.07</td>
+<td align="right">-1.16</td>
+<td align="right">0.25</td>
+</tr>
+<tr class="even">
+<td align="left">percent_black</td>
+<td align="right">-0.07</td>
+<td align="right">0.07</td>
+<td align="right">-0.99</td>
+<td align="right">0.32</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_hispanic</td>
+<td align="right">-0.09</td>
+<td align="right">0.07</td>
+<td align="right">-1.25</td>
+<td align="right">0.21</td>
+</tr>
+<tr class="even">
+<td align="left">economic_need_index</td>
+<td align="right">0.00</td>
+<td align="right">0.01</td>
+<td align="right">0.23</td>
+<td align="right">0.82</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_english_language_learners</td>
+<td align="right">0.00</td>
+<td align="right">0.01</td>
+<td align="right">0.21</td>
+<td align="right">0.84</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>knitr::kable(model_math_table)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">325.52</td>
+<td align="right">14.26</td>
+<td align="right">22.83</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">elevated_result</td>
+<td align="right">-1.85</td>
+<td align="right">1.47</td>
+<td align="right">-1.26</td>
+<td align="right">0.21</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_white</td>
+<td align="right">0.16</td>
+<td align="right">0.15</td>
+<td align="right">1.04</td>
+<td align="right">0.30</td>
+</tr>
+<tr class="even">
+<td align="left">percent_asian</td>
+<td align="right">0.40</td>
+<td align="right">0.15</td>
+<td align="right">2.66</td>
+<td align="right">0.01</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_black</td>
+<td align="right">-0.14</td>
+<td align="right">0.15</td>
+<td align="right">-0.92</td>
+<td align="right">0.36</td>
+</tr>
+<tr class="even">
+<td align="left">percent_hispanic</td>
+<td align="right">0.02</td>
+<td align="right">0.15</td>
+<td align="right">0.15</td>
+<td align="right">0.88</td>
+</tr>
+<tr class="odd">
+<td align="left">economic_need_index</td>
+<td align="right">-0.37</td>
+<td align="right">0.03</td>
+<td align="right">-11.05</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">percent_english_language_learners</td>
+<td align="right">-0.28</td>
+<td align="right">0.04</td>
+<td align="right">-6.61</td>
+<td align="right">0.00</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>knitr::kable(model_ela_table)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">338.91</td>
+<td align="right">10.28</td>
+<td align="right">32.98</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">elevated_result</td>
+<td align="right">-2.61</td>
+<td align="right">1.06</td>
+<td align="right">-2.47</td>
+<td align="right">0.01</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_white</td>
+<td align="right">0.00</td>
+<td align="right">0.11</td>
+<td align="right">0.03</td>
+<td align="right">0.98</td>
+</tr>
+<tr class="even">
+<td align="left">percent_asian</td>
+<td align="right">0.13</td>
+<td align="right">0.11</td>
+<td align="right">1.16</td>
+<td align="right">0.25</td>
+</tr>
+<tr class="odd">
+<td align="left">percent_black</td>
+<td align="right">-0.18</td>
+<td align="right">0.11</td>
+<td align="right">-1.67</td>
+<td align="right">0.10</td>
+</tr>
+<tr class="even">
+<td align="left">percent_hispanic</td>
+<td align="right">-0.08</td>
+<td align="right">0.11</td>
+<td align="right">-0.75</td>
+<td align="right">0.45</td>
+</tr>
+<tr class="odd">
+<td align="left">economic_need_index</td>
+<td align="right">-0.33</td>
+<td align="right">0.02</td>
+<td align="right">-13.48</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">percent_english_language_learners</td>
+<td align="right">-0.35</td>
+<td align="right">0.03</td>
+<td align="right">-11.50</td>
+<td align="right">0.00</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
