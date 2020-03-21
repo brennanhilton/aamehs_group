@@ -1,0 +1,175 @@
+---
+title: "heirarchical_clustering"
+author: "Maya Spaur"
+date: "3/21/2020"
+output: html_document
+---
+#code to read in and merge datasets copied from school_code Rmd
+
+
+```{r setup, include = FALSE, message=FALSE}
+#install.packages("psych")
+library(tidyverse)
+library(magrittr)
+library(pastecs)
+library(psych)
+library(readxl)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+# Misbath: A note on merging
+# My understanding is that the DBN associated with each school is made up of 3 elements
+# - the geographical district number (2 digits)
+# - the borough code (a capital letter, ie K is for Brooklyn)
+# - the school/building number (3 digits)
+
+```
+
+### Demographics
+```{r, message=FALSE}
+demo <- read_csv("./school_data/demographics.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year == "2016-17") %>% 
+  mutate(school_year = year) %>% 
+  select(-year) %>%
+  mutate(school_name = toupper(school_name)) %>%
+  drop_na(school_name)
+
+#Removing the % sign from "percent_" columns for future analyses 
+cols = c(19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 38)
+demo[,cols] %<>% lapply(function(x) parse_number(x))
+
+#The Economic Need Index (ENI) estimates the percentage of students facing economic hardship
+#I also removed the % sign from that column, but need to keep in mind that it's a percentage 
+
+#names(demo)
+#str(demo)
+#view(demo)
+
+```
+
+### Lead data
+```{r, message=FALSE}
+lead <- read_csv("./school_data/2017_water_lead.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(number_of_elevated_samples = as.numeric(number_of_elevated_samples),
+         number_of_samples_tested = as.numeric(number_of_samples_tested),
+         percent_elevated = 
+           round((number_of_elevated_samples / number_of_samples_tested)*100, 2),
+         geographical_district = as.character(geographical_district)) %>% 
+#Adding leading 0 for district numbers while always having 2 digits 
+  mutate(geographical_district = 
+           str_pad(geographical_district, width=2, side="left", pad="0")) %>% 
+  mutate(dbn = str_c(geographical_district, building_code)) %>% 
+  drop_na(elevated_result) 
+  
+#summary(lead)
+#names(lead)
+#str(lead)
+#view(lead)
+
+```
+
+
+### Scores
+```{r, message=FALSE}
+ela_scores <- read_csv("./school_data/ela_scores.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year %in% c("2016", "2017")) %>% 
+  arrange(dbn, year) %>% 
+  rename(mean_ela_score = "mean_scale_score", number_tested_ela = "number_tested") %>% 
+  select(dbn:mean_ela_score)
+
+#names(ela_scores)
+#str(ela_scores)
+#view(ela_scores)
+
+math_scores <- read_csv("./school_data/math_scores.csv") %>% 
+  janitor::clean_names() %>% 
+  filter(year %in% c("2016", "2017")) %>%
+  arrange(dbn, year) %>%
+  rename(mean_math_score = "mean_scale_score", number_tested_math = "number_tested") %>% 
+  select(dbn:mean_math_score)
+
+#names(math_scores)
+#str(math_scores)
+#view(math_scores)
+
+```
+
+#adds building codes to math, ela and demo datasets
+```{r, message=FALSE}
+building_codes <- read_excel("./school_data/2017_water_lead.xlsx", sheet = "Building School Key", skip = 1) %>%
+  janitor::clean_names() %>%
+  mutate(school_name = toupper(school_name)) 
+
+
+#view(building_codes)
+#view(ela_scores)
+
+ela_math <- full_join(math_scores, ela_scores) %>% 
+  mutate(mean_ela_score = as.numeric(mean_ela_score),
+         mean_math_score = as.numeric(mean_math_score)) %>%
+  filter(grade == "All Grades") 
+
+#view(ela_math)
+
+codes_scores <- left_join(ela_math, building_codes, by = "school_name") %>% 
+  rename(school_name_scores = school_name)
+#view(codes_ela_scores)
+
+codes_demo <- left_join(demo, building_codes, by = "school_name")
+#view(codes_demo)
+```
+
+#merging files based on building code
+```{r}
+codes_demo_lead <- left_join(lead, codes_demo, by = "building_code") %>% 
+  rename(school_name_lead = school_name)
+#Adding lead data doubles our observations - something is wrong here. we have more schools tested for lead than tested for scores. E.g. buulding X has 2 schools in it, so 2 schools are assigned the lead data from testing that building. But only 1 school in the building was tested for math and ela. We needd to remove the school that was not tester by filtering so that school_name_scores == school_name_lead - the school name from the lead dataset equals the school name from the testing dataset.
+
+summary(codes_demo_lead)
+
+#in some cases one school goes across multiple buildings. Summarized lead testing for each school.
+codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")%>% filter(school_name_lead == school_name_scores) %>% group_by(year, school_name_scores) %>% 
+  summarize(number_of_samples_tested = sum(number_of_samples_tested),
+            number_of_elevated_samples = sum(number_of_elevated_samples),
+            math_score = mean(mean_math_score),
+            ela_score = mean(mean_ela_score)) %>% 
+  mutate(percent_elevated = number_of_elevated_samples/number_of_samples_tested) %>% 
+  ungroup() %>% rename(school_name=school_name_scores) 
+
+
+final_data <- codes_demo_lead_scores %>% left_join(demo, by = "school_name") %>% drop_na()
+
+#numebrs make sense now - we have 2177 data points for test scores, and 2064 data points in our final data set. 
+```
+
+#hierarchical clustering 
+https://uc-r.github.io/hc_clustering
+```{r}
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering visualization
+#install.packages("factoextra")
+library(dendextend) # for comparing two dendrograms
+```
+
+```{r}
+
+```
