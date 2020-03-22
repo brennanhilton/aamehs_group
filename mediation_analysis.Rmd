@@ -1,0 +1,73 @@
+---
+title: "Mediation"
+author: "Sarah McLarnan"
+date: "March 21, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(viridis)
+library(mediation)
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+```
+
+```{r, read data}
+data = read.csv("./final_data.csv")
+data_2016 = data %>% filter(year == "2016") %>%
+  mutate(percent_white = as.numeric(percent_white),
+  percent_asian = as.numeric(percent_asian))
+data_2017 = data %>% filter(year == "2017") 
+```
+
+
+```{r, total effects}
+##math
+fit_totalef_math <- lm(math_score ~ economic_need_index, data = data_2016)
+
+summary(fit_totalef_math)
+
+##ela
+fit_totalef_ela <- lm(ela_score ~ economic_need_index, data = data_2016)
+
+summary(fit_totalef_ela)
+
+```
+
+```{r, mediator and independent variable}
+fit_ivmed <- lm(percent_elevated ~ economic_need_index, data = data_2016 )
+
+summary(fit_ivmed)
+
+```
+
+
+```{r, mediator and dependent variable}
+fit_dvmed_math <- lm(math_score ~ economic_need_index + percent_elevated, data = data_2016 )
+
+summary(fit_dvmed_math)
+
+fit_dvmed_ela <- lm(ela_score ~ economic_need_index + percent_elevated, data = data_2016)
+
+summary(fit_dvmed_ela)
+```
+
+```{r}
+results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_math, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
+
+summary(results)
+```
+
