@@ -66,8 +66,15 @@ summary(fit_dvmed_ela)
 ```
 
 ```{r}
-results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_math, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
+math_results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_math, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
 
-summary(results)
+summary(math_results) %>%
+  plot()
+
+ela_results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_ela, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
+
+summary(ela_results) %>%
+  plot()
 ```
+
 
