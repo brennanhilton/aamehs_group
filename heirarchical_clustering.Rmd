@@ -8,12 +8,17 @@ output: html_document
 
 
 ```{r setup, include = FALSE, message=FALSE}
-#install.packages("psych")
 library(tidyverse)
 library(magrittr)
 library(pastecs)
 library(psych)
 library(readxl)
+library(lubridate)
+library(dendextend)
+library(ggdendro)
+library(factoextra)
+library(reshape2)
+library(pals)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -158,6 +163,8 @@ codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "buildin
 
 final_data <- codes_demo_lead_scores %>% left_join(demo, by = "school_name") %>% drop_na()
 
+summary(final_data)
+
 #numebrs make sense now - we have 2177 data points for test scores, and 2064 data points in our final data set. 
 ```
 
@@ -170,6 +177,106 @@ library(factoextra) # clustering visualization
 library(dendextend) # for comparing two dendrograms
 ```
 
+#HC analysis: 
+#Outcome: lower test scores, math_score, ela_score
+#Exposure: Elevated lead concentrations in school drinking water, percent_elevated
+
 ```{r}
+dim(final_data)
+
+# 1j Summary statistics on dataset
+
+summary(final_data)
+
+# 1k Scale the dataset 
+
+final_data_2017 =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(percent_elevated, math_score, ela_score, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+final_data_2016 =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(percent_elevated, math_score, ela_score, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+#summary(final_data_s)
+#final_data_s <- as.data.frame(scale(final_data, center = TRUE))
+```
+
+
+```{r 2016}
+view(final_data)
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist <- dist(final_data_2016, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+# hclust is an agglomerative clustering algorithm
+# other functions are available in R 
+# the method arguement determines the function used to compute distance between clusters
+# We will just use the complete method for this lab. 
+
+hc.complete <- hclust(df.dist, method = "complete")
+
+# 6b Look at dendrogram
+
+as.dendrogram(hc.complete) %>% head()
 
 ```
+
+#plotting the cluster
+```{r}
+# hierarchial clusters are most clearly represented as visual trees
+
+# 7a Plotting with Base R 
+
+# 7a.i Extract the dendrogram from the HC solution 
+
+dendro.complete <- as.dendrogram(hc.complete)
+
+# 7a.ii Plot 
+# height indicates how dissimilar the two clusters are 
+# i.e. the clusters fused at height = 22 
+# are much more dissimilar 
+# than the clusters fused at height = 4
+
+dendro.complete %>% 
+  plot(main = "Complete Linkage", ylab = "Height", leaflab = "none") 
+```
+#choosing the appropriate number of clusters 
+
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc <- Constituents %>% mutate(hcluster.12 = hc.cluster.12)
+
+# 8c.iv Compute mean concentration of each constituent within each cluster
+
+df.hc.mean <- df.hc %>% 
+  group_by(hcluster.12) %>% 
+  summarize_all(.funs = mean)
+
+# 8c.v Put data in long format
+
+plot_means_hc12 <- df.hc.mean %>%
+  gather(key = "species", value = "mean", -hcluster.12) 
+
+# 8c.vii Plot means of each cluster
+# we will just plot 7 of the clusters for aesthetic reasons 
+
+# 8c.vii.i Randomly select clusters to view
+
+plot_means_hc12.7c <- plot_means_hc12 %>% 
+  filter(hcluster.12 %in% 1:6)
+
+# 8c.vii.ii Plot
+
+ggplot(plot_means_hc12.7c, aes(x = species, y = mean, fill = species)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hcluster.12) +        # creates 12 plots, for each cluster
+  theme_bw() 
+
+
