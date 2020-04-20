@@ -1,7 +1,7 @@
 ---
 title: "Mediation"
 author: "Sarah McLarnan"
-date: "March 21, 2020"
+date: "April 21, 2020"
 output: html_document
 ---
 
@@ -33,48 +33,141 @@ data_2016 = data %>% filter(year == "2016") %>%
 data_2017 = data %>% filter(year == "2017") 
 ```
 
+2016 
 
-```{r, total effects}
+```{r, total effects 2016}
 ##math
 fit_totalef_math <- lm(math_score ~ economic_need_index, data = data_2016)
 
 summary(fit_totalef_math)
 
+totalefmath = summary(fit_totalef_math)$coeff[2,1]
+
 ##ela
-fit_totalef_ela <- lm(ela_score ~ economic_need_index, data = data_2016)
+fit_totalef_ela <- lm(ela_score ~ percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners, data = data_2016)
+
+summary(fit_totalef_ela)
+
+totalefela = summary(fit_totalef_ela)$coeff[2,1]
+
+```
+
+```{r, mediator and independent variable 2016}
+fit_ivmed <- lm(percent_elevated ~ economic_need_index + percent_white+percent_asian + percent_black + percent_hispanic + percent_english_language_learners, data = data_2016 )
+
+summary(fit_ivmed)
+
+ivmed = summary(fit_ivmed)$coeff[2,1]
+ivmed
+```
+
+
+```{r, mediator and dependent variable 2016}
+fit_dvmed_math <- lm(math_score ~ economic_need_index + percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + percent_english_language_learners, data = data_2016 )
+
+summary(fit_dvmed_math)
+
+dvmedmath = summary(fit_dvmed_math)$coeff[2,1]
+
+
+fit_dvmed_ela <- lm(ela_score ~ economic_need_index + percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + percent_english_language_learners, data = data_2016)
+
+summary(fit_dvmed_ela)
+
+dvmedmath = summary(fit_dvmed_ela)$coeff[2,1]
+
+```
+
+```{r, mediation analyses 2016}
+
+iediffmath = totalefmath - ivmed
+
+iediffela = totalefela - ivmed
+
+propmedmath = iediffmath/totalefmath
+
+propmedela = iediffela/totalefela
+
+propmedmath
+
+propmedela
+
+
+
+math_results_16 = mediate(model.m = fit_ivmed, 
+                          model.y = fit_dvmed_math, 
+                          treat = 'economic_need_index', 
+                          mediator = 'percent_elevated', 
+                          control.value = 67,
+                          treat.value = 68,
+                          sims = 1000)
+
+summary(math_results_16)
+
+summary(math_results_16) %>%
+  plot()
+
+ela_results_16 = mediate(model.m = fit_ivmed, 
+                         model.y = fit_dvmed_ela, 
+                         treat = 'economic_need_index', 
+                         mediator = 'percent_elevated', 
+                         control.value = 67, 
+                         treat.value = 69, 
+                         sims = 1000)
+
+summary(ela_results_16)
+
+summary(ela_results_16) %>%
+  plot()
+```
+
+
+2017
+
+```{r, total effects 2017}
+##math
+fit_totalef_math <- lm(math_score ~ economic_need_index, data = data_2017)
+
+summary(fit_totalef_math)
+
+##ela
+fit_totalef_ela <- lm(ela_score ~ economic_need_index, data = data_2017)
 
 summary(fit_totalef_ela)
 
 ```
 
-```{r, mediator and independent variable}
-fit_ivmed <- lm(percent_elevated ~ economic_need_index, data = data_2016 )
+```{r, mediator and independent variable 2017}
+fit_ivmed <- lm(percent_elevated ~ economic_need_index, data = data_2017)
 
 summary(fit_ivmed)
 
 ```
 
 
-```{r, mediator and dependent variable}
-fit_dvmed_math <- lm(math_score ~ economic_need_index + percent_elevated, data = data_2016 )
+```{r, mediator and dependent variable 2017}
+fit_dvmed_math <- lm(math_score ~ economic_need_index + percent_elevated, data = data_2017)
 
 summary(fit_dvmed_math)
 
-fit_dvmed_ela <- lm(ela_score ~ economic_need_index + percent_elevated, data = data_2016)
+fit_dvmed_ela <- lm(ela_score ~ economic_need_index + percent_elevated, data = data_2017)
 
 summary(fit_dvmed_ela)
 ```
 
-```{r}
-math_results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_math, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
+```{r mediation analyses 2017}
+math_results_17 = mediate(model.m = fit_ivmed, model.y = fit_dvmed_math, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2017)
 
-summary(math_results) %>%
+summary(math_results_17)
+
+summary(math_results_17) %>%
   plot()
 
-ela_results = mediate(model.m = fit_ivmed, model.y = fit_dvmed_ela, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2016)
+ela_results_17 = mediate(model.m = fit_ivmed, model.y = fit_dvmed_ela, treat = 'economic_need_index', mediator = 'percent_elevated', data = data_2017)
 
-summary(ela_results) %>%
+summary(ela_results_17)
+
+summary(ela_results_17) %>%
   plot()
 ```
-
 
