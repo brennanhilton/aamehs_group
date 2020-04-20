@@ -7,13 +7,18 @@ output: html_document
 #code to read in and merge datasets copied from school_code Rmd
 
 
-```{r setup, include = FALSE, message=FALSE}
-#install.packages("psych")
+```{r setup}
 library(tidyverse)
 library(magrittr)
 library(pastecs)
 library(psych)
 library(readxl)
+library(lubridate)
+library(dendextend)
+library(ggdendro)
+library(factoextra)
+library(reshape2)
+library(pals)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -144,7 +149,7 @@ codes_demo_lead <- left_join(lead, codes_demo, by = "building_code") %>%
   rename(school_name_lead = school_name)
 #Adding lead data doubles our observations - something is wrong here. we have more schools tested for lead than tested for scores. E.g. buulding X has 2 schools in it, so 2 schools are assigned the lead data from testing that building. But only 1 school in the building was tested for math and ela. We needd to remove the school that was not tester by filtering so that school_name_scores == school_name_lead - the school name from the lead dataset equals the school name from the testing dataset.
 
-summary(codes_demo_lead)
+#summary(codes_demo_lead)
 
 #in some cases one school goes across multiple buildings. Summarized lead testing for each school.
 codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "building_code")%>% filter(school_name_lead == school_name_scores) %>% group_by(year, school_name_scores) %>% 
@@ -158,6 +163,8 @@ codes_demo_lead_scores <- left_join(codes_demo_lead, codes_scores, by = "buildin
 
 final_data <- codes_demo_lead_scores %>% left_join(demo, by = "school_name") %>% drop_na()
 
+#summary(final_data)
+
 #numebrs make sense now - we have 2177 data points for test scores, and 2064 data points in our final data set. 
 ```
 
@@ -170,6 +177,566 @@ library(factoextra) # clustering visualization
 library(dendextend) # for comparing two dendrograms
 ```
 
+#HC analysis: 
+#Outcome: lower test scores, math_score, ela_score
+#Exposure: Elevated lead concentrations in school drinking water, percent_elevated
+
+#creating the datasets for K means, heirarchical clustering analysis
+
+```{r ses indicators}
+dim(final_data)
+
+# 1j Summary statistics on dataset
+
+#summary(final_data)
+
+# 1k Select the dataset
+
+final_data_2017 =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+final_data_2016 =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+#summary(final_data_s)
+#final_data_s <- as.data.frame(scale(final_data, center = TRUE))
+```
+
+#calculating Eucliean distance
+
+```{r 2016}
+#view(final_data)
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist_2016 <- dist(final_data_2016, method = "euclidean")
+df.dist_2017 <- dist(final_data_2017, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+# hclust is an agglomerative clustering algorithm
+# other functions are available in R 
+# the method arguement determines the function used to compute distance between clusters
+# We will just use the complete method for this lab. 
+
+hc.complete_2016 <- hclust(df.dist_2016 , method = "complete")
+
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+# 6b Look at dendrogram
+
+as.dendrogram(hc.complete_2016) %>% head()
+
+as.dendrogram(hc.complete_2017) %>% head()
+```
+
+#plotting the cluster
 ```{r}
+# hierarchial clusters are most clearly represented as visual trees
+
+# 7a Plotting with Base R 
+
+# 7a.i Extract the dendrogram from the HC solution 
+
+dendro.complete_2016 <- as.dendrogram(hc.complete_2016)
+
+dendro.complete_2017 <- as.dendrogram(hc.complete_2017)
+
+# 7a.ii Plot 
+# height indicates how dissimilar the two clusters are 
+# i.e. the clusters fused at height = 22 
+# are much more dissimilar 
+# than the clusters fused at height = 4
+
+dendro.complete_2016 %>% 
+  plot(main = "Complete Linkage 2016 SES", ylab = "Height", leaflab = "none")
+
+dendro.complete_2017 %>% 
+  plot(main = "Complete Linkage 2017 SES", ylab = "Height", leaflab = "none")
+```
+
+#choosing the appropriate number of clusters 
+
+```{r}
+# 8a Plot branches of different cut heights
+# we can use the color_branches() function to divide our data 
+# into various numbers of clusters
+# the dashed line (which we manually create with abline())
+# indicates where the cut is taking place
+
+#2016 
+dendro.complete_2016  %>% 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2016 SES", k = 7, ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2016  %>% 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2016 SES", k = 20, ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+#2017
+dendro.complete_2017  %>% #selected this one 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2017 SES", k = 7, ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2017 %>% #selected this one 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2017 SES", k = 20, ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+# 8c.i Cut the tree to have 5 clusters
+
+hc.cluster.516 <- cutree(hc.complete_2016, 5)
+# this shows us the number of members in each cluster
+table(hc.cluster.516)
+
+hc.cluster.517 <- cutree(hc.complete_2017, 5)
+# this shows us the number of members in each cluster
+table(hc.cluster.517)
 
 ```
+
+
+```{r}
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.516 <- final_data_2016 %>% 
+  mutate(hc.cluster.516 = hc.cluster.516) %>%
+  rename("% Asian" = "percent_asian",
+         "% White" = "percent_white",
+         "% Black" = "percent_black",
+         "% Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "% ELL" = "percent_english_language_learners"
+         )
+
+df.hc.517 <- final_data_2017 %>%
+  mutate(hc.cluster.517 = hc.cluster.517) %>%
+  rename("% Asian" = "percent_asian",
+         "% White" = "percent_white",
+         "% Black" = "percent_black",
+         "% Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "% ELL" = "percent_english_language_learners"
+         )
+
+
+# 8c.iv Compute mean concentration of each constituent within each cluster
+
+df.hc.mean.516 <- df.hc.516 %>% 
+  group_by(hc.cluster.516) %>% 
+  summarize_all(.funs = mean)
+
+df.hc.mean.517 <- df.hc.517 %>% 
+  group_by(hc.cluster.517) %>% 
+  summarize_all(.funs = mean)
+
+
+# 8c.v Put data in long format
+
+plot_means_h516 <- df.hc.mean.516 %>%
+  gather(key = "group", value = "mean", -hc.cluster.516) 
+view(plot_means_h516)
+plot_means_h517 <- df.hc.mean.517 %>%
+  gather(key = "group", value = "mean", -hc.cluster.517) 
+
+# 8c.vii Plot means of each cluster
+# we will just plot 7 of the clusters for aesthetic reasons 
+
+# 8c.vii.i Randomly select clusters to view
+
+#plot_means_hc7.7c <- plot_means_h7 %>% 
+  #filter(hcluster.7 %in% 1:7)
+
+# 8c.vii.ii Plot
+ggplot(plot_means_h516, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.516) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "SES 2016")
+
+ggplot(plot_means_h517, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.517) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "SES 2017")
+
+ 
+```
+
+#assign clusters based on math and ela scores!! 
+
+```{r math and ela scores}
+#create datasets
+final_data_2017_score =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(ela_score, math_score)
+
+final_data_2016_score =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(ela_score, math_score)
+
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist_2016 <- dist(final_data_2016_score, method = "euclidean")
+
+df.dist_2017 <- dist(final_data_2017_score, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+# hclust is an agglomerative clustering algorithm
+# other functions are available in R 
+# the method arguement determines the function used to compute distance between clusters
+# We will just use the complete method for this lab. 
+
+hc.complete_2016 <- hclust(df.dist_2016 , method = "complete")
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+
+# 7a.i Extract the dendrogram from the HC solution 
+
+dendro.complete_2016 <- as.dendrogram(hc.complete_2016)
+dendro.complete_2017 <- as.dendrogram(hc.complete_2017)
+
+
+# 7a.ii Plot 
+# height indicates how dissimilar the two clusters are 
+# i.e. the clusters fused at height = 22 
+# are much more dissimilar 
+# than the clusters fused at height = 4
+
+dendro.complete_2016 %>% 
+  plot(main = "Complete Linkage 2016 Scores", ylab = "Height", leaflab = "none")
+
+dendro.complete_2017 %>% 
+  plot(main = "Complete Linkage 2017 Scores", ylab = "Height", leaflab = "none")
+
+# 8c.i Cut the tree to have 5 clusters
+
+hc.cluster.216 <- cutree(hc.complete_2016, 3)
+# this shows us the number of members in each cluster
+table(hc.cluster.216)
+
+hc.cluster.217 <- cutree(hc.complete_2017, 3)
+# this shows us the number of members in each cluster
+table(hc.cluster.217)
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.216 <- final_data_2016_score %>% 
+  mutate(hc.cluster.216 = hc.cluster.216) 
+
+df.hc.217 <- final_data_2017_score %>% 
+  mutate(hc.cluster.217 = hc.cluster.217) 
+
+# 8c.iv Compute mean concentration of each constituent within each cluster
+
+df.hc.mean.216 <- df.hc.216 %>% 
+  group_by(hc.cluster.216) %>% 
+  summarize_all(.funs = mean)
+
+df.hc.mean.217 <- df.hc.217 %>% 
+  group_by(hc.cluster.217) %>% 
+  summarize_all(.funs = mean)
+
+# 8c.v Put data in long format
+
+plot_means_h216 <- df.hc.mean.216 %>%
+  gather(key = "group", value = "mean", -hc.cluster.216) 
+view(plot_means_h216)
+
+plot_means_h217 <- df.hc.mean.217 %>%
+  gather(key = "group", value = "mean", -hc.cluster.217) 
+view(plot_means_h217)
+
+# 8c.vii.ii Plot
+ggplot(plot_means_h216, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.216) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "Scores 2016")
+
+ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.217) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "Scores 2017")
+
+#not much variation was observed in test scores but 3 clusters seems better than alternatives and is consistent across the two years
+```
+
+
+```{r percent elevated lead}
+#create datasets
+final_data_2017_lead =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(percent_elevated)
+
+final_data_2016_lead =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(percent_elevated)
+
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist_2016 <- dist(final_data_2016_lead, method = "euclidean")
+
+df.dist_2017 <- dist(final_data_2017_lead, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+# hclust is an agglomerative clustering algorithm
+# other functions are available in R 
+# the method arguement determines the function used to compute distance between clusters
+# We will just use the complete method for this lab. 
+
+
+hc.complete_2016 <- hclust(df.dist_2016, method = "complete")
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+
+# 7a.i Extract the dendrogram from the HC solution 
+
+dendro.complete_2016 <- as.dendrogram(hc.complete_2016)
+dendro.complete_2017 <- as.dendrogram(hc.complete_2017)
+
+# 7a.ii Plot 
+# height indicates how dissimilar the two clusters are 
+# i.e. the clusters fused at height = 22 
+# are much more dissimilar 
+# than the clusters fused at height = 4
+
+dendro.complete_2016 %>% 
+  plot(main = "Complete Linkage 2016 Lead", ylab = "Height", leaflab = "none")
+
+dendro.complete_2017 %>% 
+  plot(main = "Complete Linkage 2017 Lead", ylab = "Height", leaflab = "none")
+
+# 8a Plot branches of different cut heights
+
+dendro.complete_2016  %>% 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2016 Lead, k = 7", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2016 %>% #selected this one 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2016 Lead, k = 20", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2017  %>% 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2017 Lead, k = 7", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2017 %>% #selected this one 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2017 Lead, k = 20", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+
+# 8c.i Cut the tree to have 5 clusters
+
+hc.cluster.216 <- cutree(hc.complete_2016, 3)
+# this shows us the number of members in each cluster
+table(hc.cluster.216)
+
+hc.cluster.217 <- cutree(hc.complete_2017, 3)
+# this shows us the number of members in each cluster
+table(hc.cluster.217)
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.216 <- final_data_2016_lead %>% 
+  mutate(hc.cluster.216 = hc.cluster.216) 
+
+df.hc.217 <- final_data_2017_lead %>% 
+  mutate(hc.cluster.217 = hc.cluster.217) 
+
+# 8c.iv Compute mean concentration of each constituent within each cluster
+
+df.hc.mean.216 <- df.hc.216 %>% 
+  group_by(hc.cluster.216) %>% 
+  summarize_all(.funs = mean)
+
+df.hc.mean.217 <- df.hc.217 %>% 
+  group_by(hc.cluster.217) %>% 
+  summarize_all(.funs = mean)
+
+# 8c.v Put data in long format
+
+plot_means_h216 <- df.hc.mean.216 %>%
+  gather(key = "group", value = "mean", -hc.cluster.216) 
+view(plot_means_h216)
+
+plot_means_h217 <- df.hc.mean.217 %>%
+  gather(key = "group", value = "mean", -hc.cluster.217) 
+view(plot_means_h217)
+
+# 8c.vii.ii Plot
+ggplot(plot_means_h216, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.216) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "% Elevated Lead 2016")
+
+ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.217) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "% Elevated Lead 2017")
+```
+
+
+```{r all exposures}
+#create datasets
+final_data_2017_all =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+final_data_2016_all =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist_2016 <- dist(final_data_2016_all, method = "euclidean")
+
+df.dist_2017 <- dist(final_data_2017_all, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+# hclust is an agglomerative clustering algorithm
+# other functions are available in R 
+# the method arguement determines the function used to compute distance between clusters
+# We will just use the complete method for this lab. 
+
+
+hc.complete_2016 <- hclust(df.dist_2016, method = "complete")
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+
+# 7a.i Extract the dendrogram from the HC solution 
+
+dendro.complete_2016 <- as.dendrogram(hc.complete_2016)
+dendro.complete_2017 <- as.dendrogram(hc.complete_2017)
+
+# 7a.ii Plot 
+# height indicates how dissimilar the two clusters are 
+# i.e. the clusters fused at height = 22 
+# are much more dissimilar 
+# than the clusters fused at height = 4
+
+dendro.complete_2016 %>% 
+  plot(main = "Complete Linkage 2016 All Exposures", ylab = "Height", leaflab = "none")
+
+dendro.complete_2017 %>% 
+  plot(main = "Complete Linkage 2017 All Exposures", ylab = "Height", leaflab = "none")
+
+# 8a Plot branches of different cut heights
+
+dendro.complete_2016  %>% 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2016 All Exposures, k = 7", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2016 %>% #selected this one 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2016 All Exposures, k = 20", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2017  %>% 
+  color_branches(k = 7) %>%
+  plot(main = "Complete Linkage 2017 All Exposures, k = 7", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+dendro.complete_2017 %>% #selected this one 
+  color_branches(k = 20) %>%
+  plot(main = "Complete Linkage 2017 All Exposures, k = 20", ylab = "Height", leaflab = "none") %>%
+abline(h = 16, lty = 3)
+
+
+# 8c.i Cut the tree to have 5 clusters
+
+hc.cluster.216 <- cutree(hc.complete_2016, 3)
+# this shows us the number of members in each cluster
+#table(hc.cluster.216)
+
+hc.cluster.217 <- cutree(hc.complete_2017, 3)
+# this shows us the number of members in each cluster
+#table(hc.cluster.217)
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.216 <- final_data_2016_all %>% 
+  mutate(hc.cluster.216 = hc.cluster.216) %>%
+  rename("% Asian" = "percent_asian",
+         "% White" = "percent_white",
+         "% Black" = "percent_black",
+         "% Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "% ELL" = "percent_english_language_learners",
+         "% Elevated Lead" = "percent_elevated"
+         )
+
+df.hc.217 <- final_data_2017_all %>% 
+  mutate(hc.cluster.217 = hc.cluster.217) %>%
+  rename("% Asian" = "percent_asian",
+         "% White" = "percent_white",
+         "% Black" = "percent_black",
+         "% Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "% ELL" = "percent_english_language_learners",
+         "% Elevated Lead" = "percent_elevated"
+         )
+
+# 8c.iv Compute mean concentration of each constituent within each cluster
+
+df.hc.mean.216 <- df.hc.216 %>% 
+  group_by(hc.cluster.216) %>% 
+  summarize_all(.funs = mean)
+
+df.hc.mean.217 <- df.hc.217 %>% 
+  group_by(hc.cluster.217) %>% 
+  summarize_all(.funs = mean)
+
+# 8c.v Put data in long format
+
+plot_means_h216 <- df.hc.mean.216 %>%
+  gather(key = "group", value = "mean", -hc.cluster.216) 
+#view(plot_means_h216)
+
+plot_means_h217 <- df.hc.mean.217 %>%
+  gather(key = "group", value = "mean", -hc.cluster.217) 
+#view(plot_means_h217)
+
+# 8c.vii.ii Plot
+ggplot(plot_means_h216, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.216) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "All Exposures 2016")
+
+ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = 0, size = 0.2) +
+  facet_wrap(~ hc.cluster.217) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "All Exposures 2017")
+```
+
+
+
+
+
+
+

@@ -474,3 +474,5 @@ ggplot(predscore.ns.2, aes(percent_elevated)) +
 ggsave("natural spline df2 2016 ela score rug.jpg")
 ```
 
+
+
