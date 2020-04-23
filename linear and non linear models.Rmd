@@ -23,6 +23,49 @@ data_2017 = data %>% filter(year == "2017")
 ```
 
 
+###2017 models
+```{r}
+#ses model - no significant ses predictors of elevated lead
+model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2017)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+
+#scores models
+#elevated lead predicts math scores but not ela scores, controlling for ses. Economic need index and percent english language learners are also strong predictors of both scores.
+model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+
+
+model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2017)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+```
+
+###2016 models. Here lead predicts math and ela scores.
+```{r}
+#write_csv(final_data, "./final_data.csv")
+data_2016 = final_data %>% filter(year == "2016") 
+#NoteL glm with link=logit when the outcome is a proportion. Properties of logit - bound between 0 and 1! I also read that it is ok for the predictor variables to be a proportion in linear models, but we should ask Marianthi just in case.  
+
+
+
+model <- glm(percent_elevated ~ percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners, family=binomial("logit"),data = data_2016)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+
+
+model <- lm(math_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+
+
+model <- lm(ela_score ~ percent_elevated+percent_white+percent_asian+percent_black+percent_hispanic+economic_need_index+percent_english_language_learners,data = data_2016)
+broom::tidy(model) %>%
+  mutate_if(is.numeric, round, 2)
+```
+
+
 #non-linearity 2016
 ```{r}
 ############### math scores
@@ -68,12 +111,12 @@ predscore.lm1 <- predscore.lm1 %>% mutate(predscore = pred + mean(math_score),
                                         uciscore = uci + mean(math_score))
 # 4c.viii Plot
 
-ggplot(predscore.lm1, aes(percent_elevated)) + 
+math_2016 =ggplot(predscore.lm1, aes(percent_elevated)) + 
   geom_line(aes(y = predscore)) + 
   geom_line(aes(y = lciscore), color = "darkgrey") + 
   geom_line(aes(y = uciscore), color = "darkgrey") + 
   geom_rug()+
-  xlab("Percent elevated lead taps") + 
+  xlab("Percent elevated lead taps 2016") + 
   ylab("Predicted math score") + 
   theme(axis.text = element_text(size = 15)) + 
   theme(axis.title = element_text(size = 20))+
@@ -143,12 +186,12 @@ predscore.ns.2 <- predscore.ns.2 %>% mutate(predscore = pred + mean(ela_score),
                                         uciscore = uci + mean(ela_score))
 # 4c.viii Plot
 
-ggplot(predscore.ns.2, aes(percent_elevated)) + 
+ela_2016 =ggplot(predscore.ns.2, aes(percent_elevated)) + 
   geom_line(aes(y = predscore)) + 
   geom_line(aes(y = lciscore), color = "darkgrey") + 
   geom_line(aes(y = uciscore), color = "darkgrey") + 
   geom_rug()+
-  xlab("Percent elevated lead taps") + 
+  xlab("Percent elevated lead taps 2016") + 
   ylab("Predicted ELA score") + 
   theme(axis.text = element_text(size = 15)) + 
   theme(axis.title = element_text(size = 20))+
@@ -206,5 +249,158 @@ ggplot(predscore.lm2, aes(percent_elevated)) +
 
 #ggsave("2016_ela_linear.jpg")
 
+```
+
+
+
+
+
+
+
+
+
+#2017
+```{r}
+############### math scores
+#its linear! edf = 1 so just use lm
+gam1 <- gam(math_score ~ s(percent_elevated) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+summary(gam1)
+
+lm1 <- lm(math_score ~ percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+summary(lm1)
+
+#########################plot the lm
+predscore.lm1 <- predict(lm1, se.fit = TRUE, type = "terms" )
+
+# 4c.ii Convert to dataframe 
+
+predscore.lm1 <- as.data.frame(predscore.lm1)
+
+# 4c.iii Rename predictions and standard errors
+# column has different names since it is one term 
+
+predscore.lm1 <- predscore.lm1 %>% 
+  mutate( pred = fit.percent_elevated,
+          se = se.fit.percent_elevated)
+
+# 4c.iv Compute 95% confidence intervals 
+
+predscore.lm1 <- predscore.lm1 %>% 
+  mutate( lci = pred - 1.96*se,
+          uci = pred + 1.96*se)
+
+# 4c.v Keep only variables we need
+
+predscore.lm1 <- predscore.lm1 %>% select(pred, se, lci, uci)
+
+# 4c.vi Combine with data 
+
+predscore.lm1 <- predscore.lm1 %>% bind_cols(data_2017)
+
+# 4c.vii Uncenter data 
+
+predscore.lm1 <- predscore.lm1 %>% mutate(predscore = pred + mean(math_score),
+                                        lciscore = lci + mean(math_score),
+                                        uciscore = uci + mean(math_score))
+# 4c.viii Plot
+
+math_2017 =ggplot(predscore.lm1, aes(percent_elevated)) + 
+  geom_line(aes(y = predscore)) + 
+  geom_line(aes(y = lciscore), color = "darkgrey") + 
+  geom_line(aes(y = uciscore), color = "darkgrey") + 
+  geom_rug()+
+  xlab("Percent elevated lead taps 2017") + 
+  ylab("Predicted math score") + 
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20))+
+  theme_bw()  
+
+#ggsave("2017_math.jpg")
+
+#############ela scores
+
+lm2 <- lm(ela_score ~ percent_elevated + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+summary(lm2)
+
+gam2 <- gam(ela_score ~ s(percent_elevated) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+summary(gam2)
+plot(gam2)
+# edf = 4.575, supporting non-linearity. But too wiggly, try natural spline
+
+
+mod.ns.2 <- gam(ela_score ~ ns(percent_elevated,df=2) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+
+mod.ns.3 <- gam(ela_score ~ ns(percent_elevated,df=3) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+
+mod.ns.4 <- gam(ela_score ~ ns(percent_elevated,df=4) + percent_white+percent_asian + percent_black + percent_hispanic + economic_need_index + percent_english_language_learners ,data = data_2017)
+
+aic.mod.ns.2 <- AIC(mod.ns.2)
+aic.mod.ns.3 <- AIC(mod.ns.3)
+aic.mod.ns.4 <- AIC(mod.ns.4)
+#lowest AIC for 2 df
+summary(mod.ns.2)
+anova(lm2, mod.ns.2)
+#according to l4 test, modeling non-linear does not improve fit.
+```
+
+natural spline df=2 plot
+```{r}
+predscore.ns.2 <- predict(mod.ns.2, se.fit = TRUE, type = "terms" )
+
+# 4c.ii Convert to dataframe 
+
+predscore.ns.2 <- as.data.frame(predscore.ns.2)
+
+# 4c.iii Rename predictions and standard errors
+# column has different names since it is one term 
+
+predscore.ns.2 <- predscore.ns.2 %>% 
+  mutate( pred = fit.ns.percent_elevated..df...2.,
+          se = se.fit.ns.percent_elevated..df...2.)
+
+# 4c.iv Compute 95% confidence intervals 
+
+predscore.ns.2 <- predscore.ns.2 %>% 
+  mutate( lci = pred - 1.96*se,
+          uci = pred + 1.96*se)
+
+# 4c.v Keep only variables we need
+
+predscore.ns.2 <- predscore.ns.2 %>% select(pred, se, lci, uci)
+
+# 4c.vi Combine with data 
+
+predscore.ns.2 <- predscore.ns.2 %>% bind_cols(data_2017)
+
+# 4c.vii Uncenter data 
+
+predscore.ns.2 <- predscore.ns.2 %>% mutate(predscore = pred + mean(ela_score),
+                                        lciscore = lci + mean(ela_score),
+                                        uciscore = uci + mean(ela_score))
+# 4c.viii Plot
+
+ela_2017 =ggplot(predscore.ns.2, aes(percent_elevated)) + 
+  geom_line(aes(y = predscore)) + 
+  geom_line(aes(y = lciscore), color = "darkgrey") + 
+  geom_line(aes(y = uciscore), color = "darkgrey") + 
+  geom_rug()+
+  xlab("Percent elevated lead taps 2017") + 
+  ylab("Predicted ELA score") + 
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20))+
+  theme_bw()
+
+#ggsave("natural spline df2 2017 ela score rug.jpg")
+```
+final plot
+```{r}
+require(ggpubr)
+
+multi <- ggarrange(ela_2016, ela_2017, math_2016, math_2017, ncol=2, nrow=2, labels = c("A", "B", "C", "D"))
+multi <- annotate_figure(multi, fig.lab = "Figure 1. Residual Comparison",
+                         fig.lab.pos = "bottom.left", fig.lab.size = 16,
+                         fig.lab.face = "bold")
+multi
+ggsave("./figure1.tiff", dpi=300)
 ```
 
