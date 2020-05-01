@@ -19,6 +19,7 @@ library(ggdendro)
 library(factoextra)
 library(reshape2)
 library(pals)
+library(patchwork)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -299,35 +300,64 @@ hc.cluster.517 <- cutree(hc.complete_2017, 5)
 # this shows us the number of members in each cluster
 table(hc.cluster.517)
 
+# 8c.i Cut the tree to have 4 clusters
+
+hc.cluster.416 <- cutree(hc.complete_2016, 4)
+# this shows us the number of members in each cluster
+table(hc.cluster.416)
+
+hc.cluster.417 <- cutree(hc.complete_2017, 4)
+# this shows us the number of members in each cluster
+table(hc.cluster.417)
+
 ```
 
 
 ```{r}
 # 8c.ii Include the cluster assignments in the original scaled data
-
+#5 groups
 df.hc.516 <- final_data_2016 %>% 
   mutate(hc.cluster.516 = hc.cluster.516) %>%
-  rename("% Asian" = "percent_asian",
-         "% White" = "percent_white",
-         "% Black" = "percent_black",
-         "% Hispanic" = "percent_hispanic",
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
          "Econ Need Index" = "economic_need_index",
-         "% ELL" = "percent_english_language_learners"
+         "ELL" = "percent_english_language_learners"
          )
 
 df.hc.517 <- final_data_2017 %>%
   mutate(hc.cluster.517 = hc.cluster.517) %>%
-  rename("% Asian" = "percent_asian",
-         "% White" = "percent_white",
-         "% Black" = "percent_black",
-         "% Hispanic" = "percent_hispanic",
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
          "Econ Need Index" = "economic_need_index",
-         "% ELL" = "percent_english_language_learners"
+         "ELL" = "percent_english_language_learners"
          )
 
+#4 groups
+df.hc.416 <- final_data_2016 %>% 
+  mutate(hc.cluster.416 = hc.cluster.416) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners"
+         )
 
+df.hc.417 <- final_data_2017 %>%
+  mutate(hc.cluster.417 = hc.cluster.417) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners"
+         )
 # 8c.iv Compute mean concentration of each constituent within each cluster
-
+#5 clusters
 df.hc.mean.516 <- df.hc.516 %>% 
   group_by(hc.cluster.516) %>% 
   summarize_all(.funs = mean)
@@ -336,37 +366,49 @@ df.hc.mean.517 <- df.hc.517 %>%
   group_by(hc.cluster.517) %>% 
   summarize_all(.funs = mean)
 
+#4 clusters
+df.hc.mean.416 <- df.hc.416 %>% 
+  group_by(hc.cluster.416) %>% 
+  summarize_all(.funs = mean)
+
+df.hc.mean.417 <- df.hc.417 %>% 
+  group_by(hc.cluster.417) %>% 
+  summarize_all(.funs = mean)
 
 # 8c.v Put data in long format
-
+#5 groups
 plot_means_h516 <- df.hc.mean.516 %>%
   gather(key = "group", value = "mean", -hc.cluster.516) 
-view(plot_means_h516)
+
 plot_means_h517 <- df.hc.mean.517 %>%
-  gather(key = "group", value = "mean", -hc.cluster.517) 
+  gather(key = "group", value = "mean", -hc.cluster.517)
 
-# 8c.vii Plot means of each cluster
-# we will just plot 7 of the clusters for aesthetic reasons 
+#4 groups
+plot_means_h416 <- df.hc.mean.416 %>%
+  gather(key = "group", value = "mean", -hc.cluster.416) 
 
-# 8c.vii.i Randomly select clusters to view
-
-#plot_means_hc7.7c <- plot_means_h7 %>% 
-  #filter(hcluster.7 %in% 1:7)
+plot_means_h417 <- df.hc.mean.417 %>%
+  gather(key = "group", value = "mean", -hc.cluster.417)
 
 # 8c.vii.ii Plot
-ggplot(plot_means_h516, aes(x = group, y = mean, fill = group)) +
+#5 groups
+plot_5_16 <- ggplot(plot_means_h516, aes(x = group, y = mean, fill = group)) +
   geom_col() +
   geom_hline(yintercept = 0, size = 0.2) +
-  facet_wrap(~ hc.cluster.516) +        # creates plots for each cluster
-  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "SES 2016")
+  facet_wrap(~ hc.cluster.516, ncol = 5) +        # creates plots for each cluster
+  theme_minimal() +  theme(axis.text = element_text(angle = 90), legend.position = "none") + labs(title = "SES Clusters 2016", x = "Group", y = "Mean %") +
+  geom_bar(position = 'dodge', stat='identity') + geom_text(aes(label=round(mean, digits=1)), angle=90, label.size = 0.01, vjust=0.5) + scale_fill_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#984ea3"))
 
-ggplot(plot_means_h517, aes(x = group, y = mean, fill = group)) +
+plot_5_17 <- ggplot(plot_means_h517, aes(x = group, y = mean, fill = group)) +
   geom_col() +
   geom_hline(yintercept = 0, size = 0.2) +
-  facet_wrap(~ hc.cluster.517) +        # creates plots for each cluster
-  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "SES 2017")
+  facet_wrap(~ hc.cluster.517, ncol = 5) +        # creates plots for each cluster
+  theme_minimal() +  theme(axis.text = element_text(angle = 90), legend.position = "none") + labs(title = "SES Clusters 2017", x = "Group", y = "Mean %") +
+  geom_bar(position = 'dodge', stat='identity') + geom_text(aes(label=round(mean, digits=1)), angle=90, label.size = 0.01, vjust=0.5) + scale_fill_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99", "#984ea3"))
 
- 
+#combine both together
+plot_5_16 + plot_5_17
+
 ```
 
 #assign clusters based on math and ela scores!! 
@@ -624,8 +666,10 @@ df.dist_2017 <- dist(final_data_2017_all, method = "euclidean")
 
 hc.complete_2016 <- hclust(df.dist_2016, method = "complete")
 hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+```
 
 
+```{r all exposures dendrograms}
 # 7a.i Extract the dendrogram from the HC solution 
 
 dendro.complete_2016 <- as.dendrogram(hc.complete_2016)
@@ -664,15 +708,17 @@ dendro.complete_2017 %>% #selected this one
   color_branches(k = 20) %>%
   plot(main = "Complete Linkage 2017 All Exposures, k = 20", ylab = "Height", leaflab = "none") %>%
 abline(h = 16, lty = 3)
+```
 
 
+```{r all exposures 5 clusters}
 # 8c.i Cut the tree to have 5 clusters
 
-hc.cluster.216 <- cutree(hc.complete_2016, 3)
+hc.cluster.216 <- cutree(hc.complete_2016, 5)
 # this shows us the number of members in each cluster
 #table(hc.cluster.216)
 
-hc.cluster.217 <- cutree(hc.complete_2017, 3)
+hc.cluster.217 <- cutree(hc.complete_2017, 5)
 # this shows us the number of members in each cluster
 #table(hc.cluster.217)
 
@@ -680,24 +726,24 @@ hc.cluster.217 <- cutree(hc.complete_2017, 3)
 
 df.hc.216 <- final_data_2016_all %>% 
   mutate(hc.cluster.216 = hc.cluster.216) %>%
-  rename("% Asian" = "percent_asian",
-         "% White" = "percent_white",
-         "% Black" = "percent_black",
-         "% Hispanic" = "percent_hispanic",
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
          "Econ Need Index" = "economic_need_index",
-         "% ELL" = "percent_english_language_learners",
-         "% Elevated Lead" = "percent_elevated"
+         "ELL" = "percent_english_language_learners",
+         "Elevated Lead" = "percent_elevated"
          )
 
 df.hc.217 <- final_data_2017_all %>% 
   mutate(hc.cluster.217 = hc.cluster.217) %>%
-  rename("% Asian" = "percent_asian",
-         "% White" = "percent_white",
-         "% Black" = "percent_black",
-         "% Hispanic" = "percent_hispanic",
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
          "Econ Need Index" = "economic_need_index",
-         "% ELL" = "percent_english_language_learners",
-         "% Elevated Lead" = "percent_elevated"
+         "ELL" = "percent_english_language_learners",
+         "Elevated Lead" = "percent_elevated"
          )
 
 # 8c.iv Compute mean concentration of each constituent within each cluster
@@ -719,19 +765,26 @@ plot_means_h216 <- df.hc.mean.216 %>%
 plot_means_h217 <- df.hc.mean.217 %>%
   gather(key = "group", value = "mean", -hc.cluster.217) 
 #view(plot_means_h217)
+```
 
+
+```{r all exposures 5 clusters plots}
 # 8c.vii.ii Plot
-ggplot(plot_means_h216, aes(x = group, y = mean, fill = group)) +
+a16 <- ggplot(plot_means_h216, aes(x = group, y = mean, fill = group)) +
   geom_col() +
   geom_hline(yintercept = 0, size = 0.2) +
-  facet_wrap(~ hc.cluster.216) +        # creates plots for each cluster
-  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "All Exposures 2016")
+  facet_wrap(~ hc.cluster.216, ncol = 5) +        # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90), legend.position = "none") + labs(title = "All Exposures 2016", x = "Group", y = "Mean %") +
+  geom_bar(position = 'dodge', stat='identity') + geom_text(aes(label=round(mean, digits=1)), angle=0, label.size = 0.10, vjust=0.5) + scale_fill_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fdbf6f", "#fb9a99", "#984ea3"))
 
-ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
+a17 <- ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
   geom_col() +
   geom_hline(yintercept = 0, size = 0.2) +
-  facet_wrap(~ hc.cluster.217) +        # creates plots for each cluster
-  theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "All Exposures 2017")
+  facet_wrap(~ hc.cluster.217, ncol = 5) + # creates plots for each cluster
+  theme_bw() +  theme(axis.text = element_text(angle = 90), legend.position = "none") + labs(title = "All Exposures 2017", x = "Group", y = "Mean %") +
+  geom_bar(position = 'dodge', stat='identity') + geom_text(aes(label=round(mean, digits=1)), angle=0, label.size = 0.10, vjust=0.5) + scale_fill_manual(values = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fdbf6f", "#fb9a99", "#984ea3"))
+
+a16 + a17
 ```
 
 
