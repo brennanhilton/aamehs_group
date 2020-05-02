@@ -613,6 +613,12 @@ df.hc.mean.217 <- df.hc.217 %>%
   group_by(hc.cluster.217) %>% 
   summarize_all(.funs = mean)
 
+df.hc.mean.216
+df.hc.mean.217
+```
+
+
+```{r percent elevated lead putting data in long format}
 # 8c.v Put data in long format
 
 plot_means_h216 <- df.hc.mean.216 %>%
@@ -636,6 +642,7 @@ ggplot(plot_means_h217, aes(x = group, y = mean, fill = group)) +
   facet_wrap(~ hc.cluster.217) +        # creates plots for each cluster
   theme_bw() +  theme(axis.text = element_text(angle = 90)) + labs(title = "% Elevated Lead 2017")
 ```
+
 
 
 ```{r all exposures}
@@ -765,6 +772,9 @@ plot_means_h216 <- df.hc.mean.216 %>%
 plot_means_h217 <- df.hc.mean.217 %>%
   gather(key = "group", value = "mean", -hc.cluster.217) 
 #view(plot_means_h217)
+
+df.hc.mean.216
+df.hc.mean.217
 ```
 
 
