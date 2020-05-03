@@ -798,8 +798,88 @@ a16 + a17
 ```
 
 
+#adding clusters to linear model
+
+```{r}
+library(stats)
+#after running with the code chunk above, all exposures!!
+#create datasets
+view(final_data)
+
+final_data_2017_all =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(school_name, percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+final_data_2016_all =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
 
 
+# 6a.i Calculate euclidean distance between all combination of points
 
+df.dist_2016 <- dist(final_data_2016_all, method = "euclidean")
 
+df.dist_2017 <- dist(final_data_2017_all, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+hc.complete_2016 <- hclust(df.dist_2016, method = "complete")
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+hc.cluster.216 <- cutree(hc.complete_2016, 5)
+# this shows us the number of members in each cluster
+#table(hc.cluster.216)
+
+hc.cluster.217 <- cutree(hc.complete_2017, 5)
+# this shows us the number of members in each cluster
+#table(hc.cluster.217)
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.216 <- final_data_2016_all %>% 
+  mutate(hc.cluster.216 = hc.cluster.216) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners",
+         "Elevated Lead" = "percent_elevated"
+         )
+
+df.hc.217 <- final_data_2017_all %>% 
+  mutate(hc.cluster.217 = hc.cluster.217) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners",
+         "Elevated Lead" = "percent_elevated"
+         )
+
+#make data in long format
+df.hc.long.217 <- df.hc.217 %>%
+  mutate(hc.cluster.217 = as.factor(hc.cluster.217))
+
+summary(df.hc.long.217)
+
+view(df.hc.long.217)
+view(final_data) 
+
+#add the test scores back in: math_score, ela_score 
+final_data_2017_scores =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(school_name, math_score, ela_score)
+  
+for_hca_2017 <- left_join(df.hc.long.217, final_data_2017_scores, by = "school_name")
+view(for_hca_2017)
+
+#run linear regression
+library(moderndive)
+math_2017_lm <- lm(math_score ~ hc.cluster.217, data = for_hca_2017, weights=NULL, subset=NULL )
+get_regression_table(math_2017_lm)
+```
 
