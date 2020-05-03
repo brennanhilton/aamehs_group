@@ -20,6 +20,7 @@ library(factoextra)
 library(reshape2)
 library(pals)
 library(patchwork)
+library(stats)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -801,10 +802,9 @@ a16 + a17
 #adding clusters to linear model
 
 ```{r}
-library(stats)
 #after running with the code chunk above, all exposures!!
 #create datasets
-view(final_data)
+#view(final_data)
 
 final_data_2017_all =
   final_data %>%
@@ -814,7 +814,7 @@ final_data_2017_all =
 final_data_2016_all =
   final_data %>%
   filter(year == "2016") %>%
-  select(percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+  select(school_name, percent_elevated, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
 
 
 # 6a.i Calculate euclidean distance between all combination of points
@@ -862,11 +862,14 @@ df.hc.217 <- final_data_2017_all %>%
 #make data in long format
 df.hc.long.217 <- df.hc.217 %>%
   mutate(hc.cluster.217 = as.factor(hc.cluster.217))
+#summary(df.hc.long.217)
 
-summary(df.hc.long.217)
+df.hc.long.216 <- df.hc.216 %>%
+  mutate(hc.cluster.216 = as.factor(hc.cluster.216))
+#summary(df.hc.long.216)
 
-view(df.hc.long.217)
-view(final_data) 
+#view(df.hc.long.217)
+#view(final_data) 
 
 #add the test scores back in: math_score, ela_score 
 final_data_2017_scores =
@@ -875,11 +878,141 @@ final_data_2017_scores =
   select(school_name, math_score, ela_score)
   
 for_hca_2017 <- left_join(df.hc.long.217, final_data_2017_scores, by = "school_name")
-view(for_hca_2017)
+#view(for_hca_2017)
 
-#run linear regression
+final_data_2016_scores =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(school_name, math_score, ela_score)
+  
+for_hca_2016 <- left_join(df.hc.long.216, final_data_2016_scores, by = "school_name")
+#view(for_hca_2016)
+
+
+# Change reference level
+for_hca_2016 = for_hca_2016 %>% mutate(hc.cluster.216 = relevel(hc.cluster.216, ref=3))
+for_hca_2017 = for_hca_2017 %>% mutate(hc.cluster.217 = relevel(hc.cluster.217, ref=4))
+```
+
+
+```{r run lms using all exposures}
+#run linear regression for 2017
 library(moderndive)
 math_2017_lm <- lm(math_score ~ hc.cluster.217, data = for_hca_2017, weights=NULL, subset=NULL )
 get_regression_table(math_2017_lm)
+
+ela_2017_lm <- lm(ela_score ~ hc.cluster.217, data = for_hca_2017, weights=NULL, subset=NULL )
+get_regression_table(ela_2017_lm)
+
+#run linear regression for 2016
+math_2016_lm <- lm(math_score ~ hc.cluster.216, data = for_hca_2016, weights=NULL, subset=NULL )
+get_regression_table(math_2016_lm)
+
+ela_2016_lm <- lm(ela_score ~ hc.cluster.216, data = for_hca_2016, weights=NULL, subset=NULL )
+get_regression_table(ela_2016_lm)
+
 ```
 
+
+```{r run lms using just SES exposures}
+final_data_2017_ses =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(school_name, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+final_data_2016_ses =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(school_name, percent_white, percent_asian, percent_black, percent_hispanic, economic_need_index, percent_english_language_learners)
+
+
+# 6a.i Calculate euclidean distance between all combination of points
+
+df.dist_2016 <- dist(final_data_2016_ses, method = "euclidean")
+
+df.dist_2017 <- dist(final_data_2017_ses, method = "euclidean")
+
+# 6a.ii Create hierarchial cluster solution
+hc.complete_2016 <- hclust(df.dist_2016, method = "complete")
+hc.complete_2017 <- hclust(df.dist_2017, method = "complete")
+
+hc.cluster.216 <- cutree(hc.complete_2016, 5)
+# this shows us the number of members in each cluster
+#table(hc.cluster.216)
+
+hc.cluster.217 <- cutree(hc.complete_2017, 5)
+# this shows us the number of members in each cluster
+#table(hc.cluster.217)
+
+# 8c.ii Include the cluster assignments in the original scaled data
+
+df.hc.216 <- final_data_2016_ses %>% 
+  mutate(hc.cluster.216 = hc.cluster.216) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners"
+         )
+
+df.hc.217 <- final_data_2017_ses %>% 
+  mutate(hc.cluster.217 = hc.cluster.217) %>%
+  rename("Asian" = "percent_asian",
+         "White" = "percent_white",
+         "Black" = "percent_black",
+         "Hispanic" = "percent_hispanic",
+         "Econ Need Index" = "economic_need_index",
+         "ELL" = "percent_english_language_learners"
+         )
+
+#make data in long format
+df.hc.long.217 <- df.hc.217 %>%
+  mutate(hc.cluster.217 = as.factor(hc.cluster.217))
+#summary(df.hc.long.217)
+
+df.hc.long.216 <- df.hc.216 %>%
+  mutate(hc.cluster.216 = as.factor(hc.cluster.216))
+#summary(df.hc.long.216)
+
+#view(df.hc.long.217)
+#view(final_data) 
+
+#add the test scores back in: math_score, ela_score 
+final_data_2017_scores =
+  final_data %>%
+  filter(year == "2017") %>%
+  select(school_name, math_score, ela_score)
+  
+for_hca_2017 <- left_join(df.hc.long.217, final_data_2017_scores, by = "school_name")
+#view(for_hca_2017)
+
+final_data_2016_scores =
+  final_data %>%
+  filter(year == "2016") %>%
+  select(school_name, math_score, ela_score)
+  
+for_hca_2016 <- left_join(df.hc.long.216, final_data_2016_scores, by = "school_name")
+#view(for_hca_2016)
+
+
+# Change reference level
+for_hca_2016 = for_hca_2016 %>% mutate(hc.cluster.216 = relevel(hc.cluster.216, ref=3))
+for_hca_2017 = for_hca_2017 %>% mutate(hc.cluster.217 = relevel(hc.cluster.217, ref=4))
+
+
+#run linear regression for 2017
+math_2017_lm <- lm(math_score ~ hc.cluster.217, data = for_hca_2017, weights=NULL, subset=NULL )
+get_regression_table(math_2017_lm)
+
+ela_2017_lm <- lm(ela_score ~ hc.cluster.217, data = for_hca_2017, weights=NULL, subset=NULL )
+get_regression_table(ela_2017_lm)
+
+#run linear regression for 2016
+math_2016_lm <- lm(math_score ~ hc.cluster.216, data = for_hca_2016, weights=NULL, subset=NULL )
+get_regression_table(math_2016_lm)
+
+ela_2016_lm <- lm(ela_score ~ hc.cluster.216, data = for_hca_2016, weights=NULL, subset=NULL )
+get_regression_table(ela_2016_lm)
+
+```
