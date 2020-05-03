@@ -282,17 +282,16 @@ final_data_2016 = final_data %>% filter(year == "2016")
 final_data_2016_stats = final_data_2016 %>% 
   select(starts_with("percent"), economic_need_index) %>% 
   describe() %>% 
-  select(n, mean, sd, median, min, max) %>%
-  knitr::kable(digits = 2)
+  select(n, mean, sd, median, min, max) %>% 
+  knitr::kable(digits = 2) 
 
 final_data_2017 = final_data %>% filter(year == "2017")
 
 final_data_2017_stats = final_data_2017 %>% 
   select(starts_with("percent"), economic_need_index) %>% 
   describe() %>% 
-  select(n, mean, sd, median, min, max) %>%
+  select(n, mean, sd, median, min, max) %>% 
   knitr::kable(digits = 2)
-
 
 
 ```
